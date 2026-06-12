@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Gestión Integral - Villa Ansaldi</title>
+    <link rel="icon" type="image/png" href="ClubVA.png">
+    <!-- Tailwind CSS v4 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Librerías para reportes -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body class="bg-gray-100 font-sans text-gray-800">
+
+<!-- 🔒 PANTALLA DE ACCESO CONTROLADO (MARCA BLANCA REAL) -->
+<div id="contenedor-login" class="fixed inset-0 bg-slate-950 flex items-center justify-center p-4 z-[100] font-sans">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-8 shadow-2xl border border-gray-100 flex flex-col space-y-6 text-center transform transition-all">
+        <div>
+            <!-- Cambiamos el emoji plano por un icono vectorial estilizado de Font Awesome -->
+            <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-2xl mx-auto border border-blue-100 shadow-sm mb-3">
+                <i class="fa-solid fa-key"></i>
+            </div>
+            <h3 class="text-2xl font-black text-gray-900 tracking-tight">Control de Acceso</h3>
+            <!-- El nombre de la institución e inputs ahora se inyectan dinámicamente desde JavaScript -->
+            <p id="login-subtitulo-dinamico" class="text-xs text-gray-400 mt-1 uppercase font-bold tracking-wider">-</p>
+        </div>
+        <form id="form-login-administrativo" class="space-y-4 text-left">
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Correo Electrónico</label>
+                <input type="email" id="login-email" required placeholder="Cargando..." class="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 font-sans text-gray-800">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Contraseña de Seguridad</label>
+                <input type="password" id="login-password" required placeholder="••••••••" class="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 font-sans text-gray-800">
+            </div>
+            <button type="submit" class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl shadow-md transition text-sm cursor-pointer tracking-wide">
+                Iniciar Sesión de Control
+            </button>
+        </form>
+        <div id="login-error-msg" class="text-xs text-rose-600 font-semibold hidden bg-rose-50 p-2.5 rounded-xl border border-rose-100 animate-fade-in">❌ Credenciales de acceso incorrectas.</div>
+    </div>
+</div>
+
+
+    <!-- CONTENEDOR PRINCIPAL -->
+    <div class="min-h-screen flex flex-col md:flex-row relative"> 
+        
+        <!-- BARRA LATERAL (MENU MARCA BLANCA) -->
+        <aside class="w-full md:w-64 bg-slate-900 text-white p-6 flex flex-col justify-between shrink-0"> 
+            <div> 
+                <div class="flex flex-col items-center text-center mb-8 pb-4 border-b border-slate-800 w-full">
+                    <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-md overflow-hidden mb-3 border-2 border-blue-500">
+                        <img id="app-escudo-img" src="" alt="Logo Institución" class="w-full h-full object-cover">
+                    </div>
+                    <h1 id="app-nombre-entidad" class="text-xl font-bold tracking-wider text-white">-</h1>
+                    <span id="app-subtitulo-entidad" class="text-xs text-blue-400 font-semibold uppercase tracking-widest mt-0.5">-</span>
+                </div>
+        <nav class="space-y-3"> 
+
+    <!-- Dashboard -->
+    <a href="#" onclick="navegarA('dashboard')" class="flex items-center gap-3 py-2 px-4 hover:bg-slate-800 rounded-md font-medium text-gray-200 transition group">
+        <!-- Icono Azul -->
+        <i class="fas fa-chart-pie w-5 text-center text-blue-400 group-hover:text-blue-300 transition"></i>
+        <span>Dashboard</span>
+    </a> 
+
+    <!-- Socios -->
+    <a href="#" onclick="navegarA('socios')" class="flex items-center gap-3 py-2 px-4 hover:bg-slate-800 rounded-md text-gray-200 transition group">
+        <!-- Icono Verde (como el escudo de la institución) -->
+        <i class="fas fa-users w-5 text-center text-emerald-400 group-hover:text-emerald-300 transition"></i>
+        <span id="menu-txt-plural">Socios</span>
+    </a> 
+
+    <!-- Cuotas -->
+    <a href="#" onclick="navegarA('cuotas')" class="flex items-center gap-3 py-2 px-4 hover:bg-slate-800 rounded-md text-gray-200 transition group">
+        <!-- Icono Amarillo/Ámbar -->
+        <i class="fas fa-receipt w-5 text-center text-amber-400 group-hover:text-amber-300 transition"></i>
+        <span>Cuotas</span>
+    </a> 
+
+    <!-- Caja y Contabilidad -->
+    <a href="#" onclick="navegarA('caja')" class="flex items-center gap-3 py-2 px-4 hover:bg-slate-800 rounded-md text-gray-200 transition group">
+        <!-- Icono Cyan/Celeste -->
+        <i class="fas fa-cash-register w-5 text-center text-cyan-400 group-hover:text-cyan-300 transition"></i>
+        <span>Caja y Contabilidad</span>
+    </a>
+</nav>
+
+            </div> 
+            <div class="text-xs text-gray-500 mt-6">v1.0.0 - SaaS Online</div> 
+        </aside>
+
+        <!-- VISTA DE CONTENIDO PRINCIPAL -->
+        <main class="flex-1 p-6 md:p-10 relative">
+            <!-- FECHA Y HORA DE MARCA BLANCA -->
+            <div class="absolute top-6 right-6 md:top-10 md:right-10 text-right bg-slate-900 text-white px-5 py-2.5 rounded-xl shadow font-medium border border-slate-800 min-w-[220px] hidden sm:block">
+                <div id="txt-fecha" class="text-xs text-blue-400 font-semibold uppercase tracking-wider">Cargando fecha...</div>
+                <div id="txt-hora" class="text-2xl font-bold tracking-tight mt-0.5">00:00:00</div>
+            </div>
+
+            <!-- ENCABEZADO GLOBAL -->
+            <header class="mb-8 pr-0 sm:pr-[240px]">
+                <h2 id="titulo-pantalla" class="text-3xl font-bold text-gray-900">Panel de Control</h2>
+                <p id="subtitulo-pantalla" class="text-gray-500 mt-1">Estado de socios y recaudación en tiempo real.</p>
+            </header>
+    
+            <!-- PANTALLA 1: DASHBOARD (SEMAFORO INTERACTIVO) -->
+<section id="vista-dashboard" class="space-y-8">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        
+        <!-- Total Registros (Azul) -->
+        <div onclick="filtrarPorSemaforo('Todos')" class="bg-white rounded-xl p-6 shadow-xs border border-gray-100 flex items-center justify-between cursor-pointer hover:shadow-md transition">
+            <div>
+                <p class="text-xs font-bold uppercase text-blue-600 tracking-wider">Total Registrados</p>
+                <h3 class="text-3xl font-black text-blue-700 mt-1" id="txt-total">0</h3>
+            </div>
+            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-users text-blue-600 text-xl"></i>
+            </div>
+        </div>
+
+        <!-- Al Día (Verde) -->
+        <div onclick="filtrarPorSemaforo('Verde')" class="bg-white rounded-xl p-6 shadow-xs border-l-4 border-l-emerald-500 border-gray-100 flex items-center justify-between cursor-pointer hover:shadow-md transition">
+            <div>
+                <p class="text-xs font-bold uppercase text-emerald-600 tracking-wider">Pagos al Día</p>
+                <h3 class="text-3xl font-black text-emerald-700 mt-1" id="txt-verdes">0</h3>
+            </div>
+            <div class="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-check-circle text-emerald-600 text-xl"></i>
+            </div>
+        </div>
+
+        <!-- Pendientes (Amarillo) -->
+        <div onclick="filtrarPorSemaforo('Amarillo')" class="bg-white rounded-xl p-6 shadow-xs border-l-4 border-l-amber-500 border-gray-100 flex items-center justify-between cursor-pointer hover:shadow-md transition">
+            <div>
+                <p class="text-xs font-bold uppercase text-amber-600 tracking-wider">Próximo a Vencer</p>
+                <h3 class="text-3xl font-black text-amber-700 mt-1" id="txt-amarillos">0</h3>
+            </div>
+            <div class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-clock text-amber-600 text-xl"></i>
+            </div>
+        </div>
+
+        <!-- Morosos (Rojo) -->
+   <!-- REEMPLAZO QUIRÚRGICO DE CONTENEDORES (INDEX.HTML) -->
+        <div onclick="filtrarPorSemaforo('Rojo')" class="bg-white rounded-xl p-6 shadow-xs border-l-4 border-l-rose-500 border-gray-100 flex items-center justify-between cursor-pointer hover:shadow-md transition">
+            <div>
+                <p class="text-xs font-bold uppercase text-rose-600 tracking-wider">Pagos Vencidos</p>
+                <h3 class="text-3xl font-black text-rose-700 mt-1" id="txt-rojos">0</h3>
+            </div>
+            <div class="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-exclamation-triangle text-rose-600 text-xl"></i>
+            </div>
+        </div>
+
+    </div> <!-- Cierre de la grilla de tarjetas del semáforo -->
+
+    <!-- Buscador y Tabla Principal del Dashboard (Ahora adentro de la Vista Dashboard) -->
+    <div class="bg-white rounded-xl shadow border border-gray-200 overflow-hidden">
+        <div class="p-5 border-b border-gray-200 bg-gray-50 flex items-center justify-between gap-4">
+            <div class="relative w-full max-w-md">
+                <input type="text" id="input-buscador" placeholder="Buscar socio por Nombre o DNI..." class="w-full pl-4 pr-4 py-2 border border-gray-300 rounded-lg bg-white">
+            </div>
+            <div class="flex gap-3">
+                <button onclick="abrirModalSocio()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-xl shadow-md transition flex items-center gap-2 cursor-pointer">
+                    <span id="btn-txt-nuevo">+ Nuevo Socio</span>
+                </button>
+            </div>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-100 text-xs font-semibold uppercase text-gray-600 border-b border-gray-200">
+                        <th id="th-dashboard-entidad" class="p-4 text-left">Socio / Nombre</th>
+                        <th class="p-4">DNI</th>
+                        <th class="p-4">Tipo Plan</th>
+                        <th class="p-4 text-center">Estado Semáforo</th>
+                        <th class="p-4 text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-socios-body">
+                    <tr><td colspan="5" class="p-8 text-center text-gray-500">Cargando datos...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section> <!-- 🔒 CIERRE SEGURO Y ÚNICO DE LA PANTALLA 1 (DASHBOARD) -->
+
+<!-- ======================================================= -->
+<!-- 👥 PANTALLA 2: SOCIOS (Padrón Oficial Administrativo)     -->
+<!-- ======================================================= -->
+<section id="vista-socios" class="hidden bg-white rounded-xl shadow border border-gray-200 overflow-hidden">
+    <div class="p-5 border-b border-gray-200 bg-gray-50 flex items-center justify-between gap-4 flex-wrap">
+        <div class="relative w-full max-w-md">
+            <input type="text" id="input-buscador-padron" placeholder="Filtrar padrón por nombre o DNI..." class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <span class="text-xs font-bold uppercase tracking-wider text-slate-400 bg-slate-100 px-3 py-1.5 rounded-lg border">Padrón General</span>
+    </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-100 text-xs font-semibold uppercase text-gray-600 border-b border-gray-200">
+                                <th id="th-padron-entidad" class="p-4 text-left">Miembro / Ficha</th>
+                                <th class="p-4">DNI</th>
+                                <th class="p-4">Contacto</th>
+                                <th class="p-4">Categoría Plan</th>
+                                <th class="p-4 text-center">F. Alta</th>
+                                <th class="p-4 text-center">Membresía</th>
+                                <th class="p-4 text-right">Acciones de Ficha</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-padron-body">
+                            <tr><td colspan="7" class="p-8 text-center text-gray-500">Cargando padrón oficial...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- PANTALLA 3: CUOTAS (Reportes Contables) -->
+            <section id="vista-cuotas" class="hidden space-y-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="bg-white p-5 rounded-xl shadow border border-gray-100">
+                        <p class="text-xs font-bold uppercase tracking-wider text-gray-400">Recaudación Estimada</p>
+                        <h4 class="text-2xl font-black text-slate-900 mt-1" id="txt-caja-estimada">$0,00</h4>
+                        <p class="text-xs text-gray-400 mt-1">Total si todos pagan este mes.</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl shadow border border-gray-100 border-l-4 border-emerald-500">
+                        <p class="text-xs font-bold uppercase tracking-wider text-emerald-600">Caja Real Cobrada</p>
+                        <h4 class="text-2xl font-black text-emerald-600 mt-1" id="txt-caja-real">$0,00</h4>
+                        <p class="text-xs text-gray-400 mt-1">Dinero efectivamente ingresado.</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl shadow border border-gray-100 border-l-4 border-rose-500">
+                        <p class="text-xs font-bold uppercase tracking-wider text-rose-600">Total Adeudado (Mora)</p>
+                        <h4 class="text-2xl font-black text-rose-600 mt-1" id="txt-caja-mora">$0,00</h4>
+                        <p class="text-xs text-gray-400 mt-1">Capital que falta cobrar.</p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow border border-gray-200 p-6">
+                    <h4 class="text-lg font-bold text-gray-900 mb-2">Exportar Reportes Oficiales</h4>
+                    <p class="text-sm text-gray-500 mb-6">Descarga el listado consolidado de socios con sus estados de cuenta para auditorías o balances.</p>
+                    <div class="flex flex-wrap gap-4">
+                        <button onclick="exportarExcelContable()" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 px-5 rounded-xl shadow transition text-sm cursor-pointer shadow-emerald-100">Descargar Reporte Excel (.csv)</button>
+                        <button onclick="exportarPDFContable()" class="flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold py-2.5 px-5 rounded-xl shadow transition text-sm cursor-pointer shadow-rose-100">Imprimir Balance PDF</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PANTALLA 4: CAJA Y CONTABILIDAD (MÓDULO EXTENDIDO) -->
+            <section id="seccion-caja" class="hidden space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h2 class="text-2xl font-black text-gray-900 tracking-tight">Caja y Contabilidad</h2>
+                        <p class="text-sm text-gray-500 mt-0.5">Control centralizado de flujos de efectivo, cuentas bancarias y egresos.</p>
+                    </div>
+                    <div class="flex items-center gap-3 w-full sm:w-auto">
+                        <button onclick="abrirModalMovimientoCaja('Ingreso')" class="flex-1 sm:flex-none px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm shadow-md shadow-emerald-100 flex items-center justify-center gap-1.5 cursor-pointer transition">
+                            <span>Registrar Ingreso</span>
+                        </button>
+                        <button onclick="abrirModalMovimientoCaja('Egreso')" class="flex-1 sm:flex-none px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-sm shadow-md shadow-rose-100 flex items-center justify-center gap-1.5 cursor-pointer transition">
+                            <span>Registrar Egreso</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white rounded-xl p-6 shadow-xs border border-gray-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-bold uppercase text-gray-400 tracking-wider">Caja Efectivo</p>
+                            <h3 class="text-3xl font-black text-slate-800 mt-1" id="txt-saldo-efectivo">$0,00</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center text-xl font-bold">💵</div>
+                    </div>
+                    <div class="bg-white rounded-xl p-6 shadow-xs border border-gray-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-bold uppercase text-gray-400 tracking-wider">Banco / Transferencias</p>
+                            <h3 class="text-3xl font-black text-slate-800 mt-1" id="txt-saldo-banco">$0,00</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-xl font-bold">🏦</div>
+                    </div>
+                    <div class="bg-white rounded-xl p-6 shadow-xs border border-gray-100 flex items-center justify-between bg-slate-900 text-white">
+                        <div>
+                            <p class="text-xs font-bold uppercase text-slate-400 tracking-wider">Saldo Total Neto</p>
+                            <h3 class="text-3xl font-black text-white mt-1" id="txt-saldo-neto">$0,00</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-slate-800 text-white rounded-xl flex items-center justify-center text-xl font-bold">📈</div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-2xl border border-gray-100 shadow-xs overflow-hidden">
+                    <div class="p-5 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-gray-50/50">
+                        <h4 class="font-bold text-gray-900 flex items-center gap-2">Historial de Movimientos</h4>
+                        <input type="text" id="input-buscador-caja" placeholder="Buscar por concepto o categoría..." class="w-full sm:max-w-xs px-3 py-1.5 border border-gray-300 rounded-lg text-xs bg-white outline-none focus:ring-2 focus:ring-blue-500 font-sans">
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 text-gray-400 uppercase text-[10px] font-bold tracking-wider border-b border-gray-100">
+                                    <th class="p-4">Fecha</th>
+                                    <th class="p-4">Categoría / Concepto</th>
+                                    <th class="p-4 text-center">Medio de Pago</th>
+                                    <th class="p-4 text-center">Tipo</th>
+                                    <th class="p-4 text-right">Monto</th>
+                                    <th class="p-4 text-right">Doc</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-caja-body" class="divide-y divide-gray-50">
+                                <tr><td colspan="6" class="p-8 text-center text-gray-400 text-sm">No se registraron movimientos contables en este período.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <!-- ======================================================= -->
+    <!--       ➕   MODAL 1: NUEVO SOCIO / MIEMBRO              -->
+    <!-- ======================================================= -->
+    <div id="modal-socio" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-2xl w-full shadow-2xl overflow-hidden border border-gray-100 transform transition-all flex flex-col my-auto">
+            <div class="bg-white text-gray-900 px-6 py-4 flex justify-between items-center border-b border-gray-100">
+                <h3 id="txt-modal-titulo-alta" class="text-lg font-bold text-gray-900">Nuevo Socio</h3>
+                <button onclick="cerrarModalSocio()" class="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer font-light">&times;</button>
+            </div>
+            <form id="form-nuevo-socio" class="p-6 space-y-5 text-left overflow-y-auto max-h-[80vh]">
+                
+                <!-- 👤 SECCIÓN 1: DATOS PERSONALES -->
+                <div class="space-y-3">
+                    <h4 class="text-sm font-bold text-blue-600 flex items-center gap-1.5">👤 Datos Personales</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Nombre *</label>
+                            <input type="text" id="form-nombre" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Apellido *</label>
+                            <input type="text" id="form-apellido" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">DNI / Identificación *</label>
+                            <input type="text" id="form-dni" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 font-mono">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Fecha de Nacimiento *</label>
+                            <input type="date" id="form-nacimiento" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 text-gray-600">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Teléfono *</label>
+                            <input type="text" id="form-telefono" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Email (Opcional)</label>
+                            <input type="email" id="form-email" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Dirección / Domicilio</label>
+                        <input type="text" id="form-direccion" placeholder="Calle, número, localidad" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+
+                <!-- ⚽ SECCIÓN 2: DISCIPLINA / ACTIVIDAD -->
+                <div class="space-y-3 pt-2 border-t border-gray-100">
+                    <h4 class="text-sm font-bold text-indigo-600 flex items-center gap-1.5">⚽ Asignación Institucional</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Actividad Principal *</label>
+                            <input type="text" id="form-actividad" placeholder="Ej: Fútbol, Patín, Tenis" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Categoría / División *</label>
+                            <input type="text" id="form-categoria" placeholder="Ej: Sub-15, Primera, Veteranos" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 💵 SECCIÓN 3: INFORMACIÓN DE CUOTA -->
+                <div class="space-y-3 pt-2 border-t border-gray-100">
+                    <h4 class="text-sm font-bold text-emerald-600 flex items-center gap-1.5">💵 Información de la Cuota</h4>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Condición / Arancel *</label>
+                        <select id="form-tipo" onchange="verificarSiEsAdherenteAlta()" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 text-gray-700">
+                            <!-- Se carga solo -->
+                        </select>
+                    </div>
+                    <div id="contenedor-titular-alta" class="hidden animate-fade-in space-y-1">
+                        <label class="block text-xs font-bold text-blue-600 mb-1">👤 Vincular a Socio Titular *</label>
+                        <select id="form-id-titular" class="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 text-gray-700">
+                            <!-- Se carga solo -->
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Monto Base ($) *</label>
+                            <input type="number" id="form-monto" step="0.01" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 font-medium">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Fecha Próximo Vencimiento *</label>
+                            <input type="date" id="form-vencimiento" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 text-gray-600">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Observaciones / Notas Internas</label>
+                        <textarea id="form-notas" rows="2" placeholder="Notas médicas, observaciones, etc." class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 resize-none font-sans"></textarea>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                    <button type="button" onclick="cerrarModalSocio()" class="px-5 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 text-sm cursor-pointer">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-sm shadow-md shadow-blue-100 cursor-pointer">💾 Guardar Miembro</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- ======================================================= -->
+    <!-- 💵         MODAL 2: CONFIRMAR PAGO INTERACTIVO          -->
+    <!-- ======================================================= -->
+    <div id="modal-confirmar-pago" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden border border-gray-100 transform transition-all text-center p-6 flex flex-col space-y-5">
+            <div class="flex justify-center">
+                <div class="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-500 text-2xl shadow-sm border border-emerald-100">✓</div>
+            </div>
+            <div>
+                <h3 class="text-xl font-bold text-gray-900">Confirmar Pago</h3>
+                <p class="text-sm text-gray-500 mt-1">Registrá el pago de <span id="pago-socio-nombre" class="font-bold text-gray-800">-</span></p>
+            </div>
+            <div class="bg-slate-50 rounded-xl p-4 border border-gray-100 text-left space-y-2 text-sm text-gray-600">
+                <div class="flex justify-between"><span>Servicio:</span><span id="pago-servicio-txt" class="font-bold text-gray-900">-</span></div>
+                <div class="flex justify-between"><span>Monto total:</span><span id="pago-monto-txt" class="font-bold text-gray-900 text-base">$-</span></div>
+                <div class="flex justify-between"><span>Vencía:</span><span id="pago-vencimiento-txt" class="font-medium text-gray-900">-</span></div>
+            </div>
+            <div class="text-left">
+                <label class="block text-xs font-bold uppercase text-gray-400 mb-2 tracking-wide">Tipo de pago</label>
+                <div class="grid grid-cols-2 gap-3">
+                    <button type="button" onclick="seleccionarTipoCobro('total')" id="btn-pago-total" class="p-3 border-2 border-emerald-500 rounded-xl text-center transition bg-emerald-50/50 cursor-pointer flex flex-col items-center justify-center">
+                        <div class="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px] font-bold mb-1">✓</div>
+                        <span class="text-gray-900 font-bold text-sm">Pago Total</span>
+                        <span class="text-[10px] text-gray-500">Abona completo</span>
+                    </button>
+                    <button type="button" onclick="seleccionarTipoCobro('parcial')" id="btn-pago-parcial" class="p-3 border-2 border-gray-200 rounded-xl text-center transition hover:border-emerald-400 cursor-pointer flex flex-col items-center justify-center">
+                        <div class="text-amber-500 font-bold text-base mb-1">%</div>
+                        <span class="text-gray-900 font-bold text-sm">Pago Parcial</span>
+                        <span class="text-[10px] text-gray-500">Abona una parte</span>
+                    </button>
+                </div>
+            </div>
+            <div id="contenedor-monto-parcial" class="hidden text-left animate-fade-in">
+                <label class="block text-xs font-bold uppercase text-gray-400 mb-1">¿Cuánto abona hoy? *</label>
+                <div class="relative">
+                    <span class="absolute left-3 top-2 text-gray-500 text-sm font-bold">$</span>
+                    <input type="number" id="input-monto-parcial" step="0.01" class="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-gray-800">
+                </div>
+            </div>
+            
+            <div class="text-left">
+                <label class="block text-xs font-bold uppercase text-gray-400 mb-1 tracking-wide">Medio de Pago *</label>
+                <select id="select-pago-medio" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-emerald-500 text-gray-700 font-sans">
+                    <option value="Efectivo">💵 Efectivo (Caja Chica)</option>
+                    <option value="Transferencia">🏦 Transferencia Bancaria</option>
+                    <option value="Mercado Pago">📱 Mercado Pago</option>
+                </select>
+            </div>
+            <div class="text-left">
+                <label class="block text-xs font-bold uppercase text-gray-400 mb-1 tracking-wide">Observaciones (Opcional)</label>
+                <textarea id="txt-pago-notas" rows="2" placeholder="Nro de comprobante, etc." class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-emerald-500 resize-none font-sans"></textarea>
+            </div>
+            <div class="flex space-x-3 pt-2">
+                <button onclick="cerrarModalConfirmarPago()" class="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-semibold text-sm cursor-pointer">Cancelar</button>
+                <button onclick="procesarCobroDefinitivo()" class="flex-1 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition font-semibold text-sm shadow-md shadow-emerald-100 flex items-center justify-center space-x-2 cursor-pointer">
+                    <span>✓ Confirmar Pago</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- ======================================================= -->
+    <!-- 🎉 MODAL 3: ÉXITO AL REGISTRAR SOCIO / MIEMBRO          -->
+    <!-- ======================================================= -->
+    <div id="modal-exito-socio" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-sm w-full shadow-2xl overflow-hidden border border-gray-100 transform transition-all text-center p-6">
+            <span class="text-4xl inline-block p-4 bg-blue-50 text-blue-600 rounded-full mb-4">✓</span>
+            <h3 class="text-xl font-bold text-gray-900 mb-1">¡Registro Exitoso!</h3>
+            <p class="text-xs text-gray-500 mb-4">El nuevo miembro ha sido incorporado al padrón oficial correctamente.</p>
+            <div class="bg-gray-50 rounded-xl p-4 mb-6 border border-gray-100 text-sm text-left space-y-2 text-gray-700">
+                <div>Nombre: <span id="lbl-exito-nombre" class="font-bold text-gray-950">-</span></div>
+                <div>DNI: <span id="lbl-exito-dni" class="font-semibold">-</span></div>
+                <div>Plan: <span id="lbl-exito-plan" class="font-medium text-blue-600">-</span></div>
+            </div>
+            <button onclick="cerrarModalExitoSocio()" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-lg shadow transition cursor-pointer text-sm">Entendido</button>
+        </div>
+    </div>
+
+    <!-- ======================================================= -->
+    <!-- ✏️ MODAL 4: EDICIÓN DE MIEMBRO AMPLIADA (DOS COLUMNAS)   -->
+    <!-- ======================================================= -->
+    <div id="modal-editar-socio" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-2xl w-full shadow-2xl overflow-hidden border border-gray-100 transform transition-all flex flex-col my-auto">
+            <div class="bg-white text-gray-900 px-6 py-4 flex justify-between items-center border-b border-gray-100">
+                <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">✏️ Editar Información</h3>
+                <button onclick="cerrarModalEditarSocio()" class="text-gray-400 hover:text-gray-600 text-2xl cursor-pointer font-light">&times;</button>
+            </div>
+            <form id="form-editar-socio" class="p-6 space-y-5 text-left overflow-y-auto max-h-[80vh]">
+                <input type="hidden" id="edit-form-id">
+                
+                <div class="space-y-3">
+                    <h4 class="text-sm font-bold text-blue-600 flex items-center gap-1.5">👤 Datos Personales</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Nombre *</label>
+                            <input type="text" id="edit-form-nombre" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Apellido *</label>
+                            <input type="text" id="edit-form-apellido" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">DNI (No editable)</label>
+                            <input type="text" id="edit-form-dni" disabled class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 text-gray-400 font-mono outline-none cursor-not-allowed">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Fecha de Nacimiento *</label>
+                            <input type="date" id="edit-form-nacimiento" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 text-gray-600">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Teléfono *</label>
+                            <input type="text" id="edit-form-telefono" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Email</label>
+                            <input type="email" id="edit-form-email" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Actividad Principal *</label>
+                            <input type="text" id="edit-form-actividad" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Categoría / División *</label>
+                            <input type="text" id="edit-form-categoria" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Dirección</label>
+                        <input type="text" id="edit-form-direccion" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+
+                <div class="space-y-3 pt-2 border-t border-gray-100">
+                    <h4 class="text-sm font-bold text-emerald-600 flex items-center gap-1.5">💵 Información del Servicio / Cuotas</h4>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Servicio / Plan Actual *</label>
+                        <input type="text" id="edit-form-tipo" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Monto de Cuota ($) *</label>
+                            <input type="number" id="edit-form-monto" step="0.01" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 font-medium">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Próximo Vencimiento *</label>
+                            <input type="date" id="edit-form-vencimiento" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 text-gray-600">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Notas / Observaciones Internas</label>
+                        <textarea id="edit-form-notas" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                    <button type="button" onclick="cerrarModalEditarSocio()" class="px-5 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 text-sm cursor-pointer">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-sm shadow-md shadow-blue-100 cursor-pointer">💾 Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- ======================================================= -->
+    <!-- 🪟 MODALES DE COBROS, ADVERTENCIAS Y SCRIPTS FINALES     -->
+    <!-- ======================================================= -->
+    <div id="modal-editar-exito" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-sm w-full shadow-2xl p-6 text-center space-y-4 border border-gray-100 transform transition-all animate-fade-in">
+            <div class="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-500 text-xl mx-auto border border-emerald-100">✓</div>
+            <div>
+                <h3 class="text-lg font-bold text-gray-900">Ficha Actualizada</h3>
+                <p class="text-sm text-gray-500 mt-1">Los cambios en la ficha de <span id="lbl-editexito-nombre" class="font-bold text-gray-800">-</span> se guardaron con éxito.</p>
+            </div>
+            <div class="pt-2">
+                <button onclick="document.getElementById('modal-editar-exito').classList.add('hidden')" class="w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold text-sm shadow-md shadow-emerald-100 cursor-pointer">Entendido</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-pago-exito" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-sm w-full shadow-2xl p-6 text-center space-y-4 border border-gray-100 transform transition-all animate-fade-in">
+            <div class="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-500 text-xl mx-auto border border-emerald-100">✓</div>
+            <div>
+                <h3 class="text-lg font-bold text-gray-900">Pago Registrado</h3>
+                <p class="text-sm text-gray-500 mt-1">El cobro para <span id="lbl-pagoexito-nombre" class="font-bold text-gray-800">-</span> se procesó correctamente.</p>
+            </div>
+            <div class="bg-gray-50 rounded-xl p-3 text-sm text-left space-y-1.5 text-gray-600 border border-gray-100 font-sans">
+                <div class="flex justify-between"><span>Monto Abonado:</span><span id="lbl-pagoexito-monto" class="font-bold text-gray-900">-</span></div>
+                <div class="flex justify-between"><span>Modalidad:</span><span id="lbl-pagoexito-tipo" class="font-medium text-emerald-600">-</span></div>
+            </div>
+            <div class="pt-2">
+                <button onclick="document.getElementById('modal-pago-exito').classList.add('hidden')" class="w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold text-sm shadow-md shadow-emerald-100 cursor-pointer">Entendido</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-baja-confirmar" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-sm w-full shadow-2xl p-6 text-center space-y-4 border border-gray-100 transform transition-all">
+            <div class="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center text-amber-500 text-xl mx-auto border border-amber-100">⚠️</div>
+            <div>
+                <h3 class="text-lg font-bold text-gray-900" id="lbl-baja-titulo">Cambiar Estado</h3>
+                <p class="text-sm text-gray-500 mt-1">¿Estás seguro de modificar la membresía de <span id="lbl-baja-nombre" class="font-bold text-gray-800">-</span>?</p>
+            </div>
+            <div class="flex space-x-3 pt-2">
+                <button onclick="document.getElementById('modal-baja-confirmar').classList.add('hidden')" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-semibold text-sm cursor-pointer">Atrás</button>
+                <button id="btn-baja-ejecutar" class="flex-1 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-semibold text-sm shadow-md shadow-amber-100 cursor-pointer">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-eliminar-confirmar" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-sm w-full shadow-2xl p-6 text-center space-y-4 border border-gray-100 transform transition-all">
+            <div class="w-12 h-12 bg-rose-50 rounded-full flex items-center justify-center text-rose-500 text-xl mx-auto border border-rose-100">🗑️</div>
+            <div>
+                <h3 class="text-lg font-bold text-gray-900">¿Eliminar Registro?</h3>
+                <p class="text-sm text-gray-500 mt-1">Esta acción borrará permanentemente la ficha de <span id="lbl-eliminar-nombre" class="font-bold text-gray-800">-</span>. Esta operación no se puede deshacer.</p>
+            </div>
+            <div class="flex space-x-3 pt-2">
+                <button onclick="document.getElementById('modal-eliminar-confirmar').classList.add('hidden')" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-semibold text-sm cursor-pointer">Cancelar</button>
+                <button id="btn-eliminar-ejecutar" class="flex-1 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-semibold text-sm shadow-md shadow-rose-100 cursor-pointer">Eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-whatsapp" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden border border-gray-100 transform transition-all text-left flex flex-col">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center text-white text-xl shadow-sm">💬</div>
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900">Enviar Recordatorio</h2>
+                        <p class="text-xs text-gray-500">WhatsApp Web se abrirá con el mensaje configurado</p>
+                    </div>
+                </div>
+                <button onclick="cerrarModalWhatsApp()" class="text-gray-400 hover:text-gray-600 text-xl font-bold cursor-pointer">&times;</button>
+            </div> 
+            <div class="p-6 space-y-4 overflow-y-auto max-h-[70vh]">
+                <div class="bg-slate-50 rounded-xl p-4 border border-gray-100 flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-sm" id="wa-socio-iniciales">JP</div>
+                    <div>
+                        <p class="font-bold text-gray-900 text-sm" id="wa-socio-nombre">-</p>
+                        <p class="text-xs text-gray-400" id="wa-socio-telefono">-</p>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-gray-400 mb-2">Tipo de recordatorio</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button type="button" onclick="cambiarTipoMensajeWhatsApp('vencido')" id="btn-wa-vencido" class="p-3 border-2 border-rose-500 rounded-xl text-left transition bg-rose-50/50 cursor-pointer">
+                            <span class="text-rose-500 font-bold text-sm block mb-0.5">Pago Vencido</span>
+                        </button>
+                        <button type="button" onclick="cambiarTipoMensajeWhatsApp('proximo')" id="btn-wa-proximo" class="p-3 border-2 border-gray-200 rounded-xl text-left transition hover:border-amber-400 cursor-pointer">
+                            <span class="text-amber-500 font-bold text-sm block mb-0.5">Próximo a Vencer</span>
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-gray-400 mb-1">Cuerpo del Mensaje</label>
+                    <textarea id="txt-wa-cuerpo" rows="6" class="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none text-sm bg-white focus:ring-2 focus:ring-green-500 leading-relaxed font-sans"></textarea>
+                </div>
+                <div class="flex space-x-3 pt-2">
+                    <button onclick="cerrarModalWhatsApp()" class="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-semibold text-sm cursor-pointer">Cancelar</button>
+                    <button onclick="dispararPestañaWhatsApp()" class="flex-1 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition font-semibold text-sm shadow flex items-center justify-center space-x-2 cursor-pointer shadow-emerald-100">
+                        <span>Abrir WhatsApp</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ORQUESTACIÓN MODULAR CENTRAL -->
+    <script src="config.js"></script>
+    <script type="module" src="app.js"></script>
+</body>
+</html>
