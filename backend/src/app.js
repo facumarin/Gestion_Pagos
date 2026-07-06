@@ -8,6 +8,7 @@ import { ObtenerDashboard } from './use-cases/ObtenerDashboard.js';
 import { RegistrarPagoCuota } from './use-cases/RegistrarPagoCuota.js';
 import { RegistrarSocioCompleto } from './use-cases/RegistrarSocioCompleto.js';
 import { ObtenerHistorialSocio } from './use-cases/ObtenerHistorialSocio.js';
+import { ObtenerBalanceCuotas } from './use-cases/ObtenerBalanceCuotas.js';
 
 const app = express();
 app.use(cors());
@@ -37,7 +38,11 @@ const obtenerHistorialSocioUC =
   new ObtenerHistorialSocio(
     supabase
   );
-
+const obtenerBalanceCuotasUC =
+  new ObtenerBalanceCuotas(
+    supabase,
+    socioRepository
+  );
 // 📡 A. Traer los datos del Dashboard y métricas del semáforo
 app.get('/dashboard', async (req, res) => {
   try {
@@ -128,7 +133,16 @@ app.get('/socios/:id/pagos', async (req, res) => {
     });
   }
 });
-
+app.get('/cuotas/balance', async (req, res) => {
+  try {
+    const resultado = await obtenerBalanceCuotasUC.ejecutar();
+    res.json(resultado);
+  } catch (error) {
+    res.status(500).json({
+      error: error.message
+    });
+  }
+});
 // 🔒 ENDPOINT: VALIDACIÓN DE CREDENCIALES REALES EN SUPABASE AUTH
 app.post('/auth/login', async (req, res) => {
   const { email, password } = req.body;
