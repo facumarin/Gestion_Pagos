@@ -1,10 +1,41 @@
-// frontend/src/modals/modal-socio.js - PARTE 1
+// frontend/src/modals/modal-socio.js (Sincronizado Comercial Definitivo)
+
 export function configurarModalSocio(obtenerSociosFn, recargarDashboardFn) {
   const form = document.getElementById('form-nuevo-socio');
   if (!form) return;
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
+
+    const tipoRegla = document.getElementById('form-alta-tipo-regla').value;
+    const condicionAlta = document.getElementById('form-alta-condicion').value;
+    const hoy = new Date();
+    const anioActual = hoy.getFullYear(); 
+    
+    let mesSeleccionado = hoy.getMonth() + 1;
+    let medioSeleccionado = 'Efectivo';
+    let registraPagoInicial = false;
+    let fechaFinalTexto = null; 
+
+    if (condicionAlta === 'pago') {
+      registraPagoInicial = true;
+      mesSeleccionado = parseInt(document.getElementById('form-alta-periodo').value, 10);
+      medioSeleccionado = document.getElementById('form-alta-medio').value;
+      
+      if (tipoRegla === 'calendario') {
+        const proximoMes = new Date(anioActual, mesSeleccionado, 10);
+        fechaFinalTexto = proximoMes.toISOString().split('T')[0];
+      } else {
+        hoy.setMonth(hoy.getMonth() + 1);
+        fechaFinalTexto = hoy.toISOString().split('T')[0];
+      }
+    } else if (condicionAlta === 'prueba') {
+      const proximoMesPrueba = new Date(anioActual, hoy.getMonth() + 1, 10);
+      fechaFinalTexto = proximoMesPrueba.toISOString().split('T')[0];
+    } else {
+      // 🎯 TU REGLA DE ORO: Si ingresa con Deuda Pendiente, viaja estrictamente vacía (NULL)
+      fechaFinalTexto = null;
+    }
 
     const nuevoSocio = {
       nombre: document.getElementById('form-nombre').value.trim(),
@@ -14,16 +45,20 @@ export function configurarModalSocio(obtenerSociosFn, recargarDashboardFn) {
       email: document.getElementById('form-email').value.trim(),
       direccion: document.getElementById('form-direccion').value.trim() || null,
       actividad: document.getElementById('form-actividad').value.trim(),
-      categoria: document.getElementById('form-categoria').value.trim(),      
-      // 🔌 ADAPTADOR DUAL: Enviamos ambos formatos para que Supabase capture la fecha sí o sí
+      categoria: document.getElementById('form-categoria').value.trim(), 
       fechaNacimiento: document.getElementById('form-nacimiento').value || null,
       fecha_nacimiento: document.getElementById('form-nacimiento').value || null,
       tipo: document.getElementById('form-tipo').value,
       id_titular: document.getElementById('form-id-titular')?.value || null,
       idTitular: document.getElementById('form-id-titular')?.value || null,
       montoCuota: parseFloat(document.getElementById('form-monto').value) || 5000,
-      fechaVencimiento: document.getElementById('form-vencimiento').value || null,
-      fecha_vencimiento: document.getElementById('form-vencimiento').value || null,
+      
+      fechaVencimiento: fechaFinalTexto,
+      fecha_vencimiento: fechaFinalTexto,
+      registraPagoInicial: registraPagoInicial,
+      altaMesContable: mesSeleccionado,
+      altaMedioPago: medioSeleccionado,
+      condicionIngreso: condicionAlta,
       notas: document.getElementById('form-notas').value.trim() || null
     };
 
@@ -47,23 +82,25 @@ export function configurarModalSocio(obtenerSociosFn, recargarDashboardFn) {
     }
   });
 }
-// frontend/src/modals/modal-socio.js - PARTE 2
 
 window.abrirModalSocio = function() {
   const selectTipo = document.getElementById('form-tipo');
   if (selectTipo && window.AppConfig) {
-    // 🔌 CONEXIÓN CONFIG REAL: Mapea tu array real de planesDisponibles
     selectTipo.innerHTML = window.AppConfig.planesDisponibles.map(p => 
       `<option value="${p}">${p}</option>`
     ).join('');
-    
-    // Asignamos tu monto base por defecto ($5000) de forma automática al abrir
     document.getElementById('form-monto').value = window.AppConfig.montoBaseDefault || 5000;
   }
-  
-  const hoy = new Date();
-  hoy.setMonth(hoy.getMonth() + 1);
-  document.getElementById('form-vencimiento').value = hoy.toISOString().split('T')[0];
+
+  const selectRegla = document.getElementById('form-alta-tipo-regla');
+  if (selectRegla) selectRegla.value = 'calendario';
+
+  const selectCondicion = document.getElementById('form-alta-condicion');
+  if (selectCondicion) selectCondicion.value = 'deuda';
+
+  const contenedorComercial = document.getElementById('contenedor-comercial-alta');
+  if (contenedorComercial) contenedorComercial.classList.add('hidden');
+
   document.getElementById('modal-socio').classList.remove('hidden');
 }
 
@@ -77,22 +114,51 @@ window.cerrarModalExitoSocio = function() {
   document.getElementById('modal-exito-socio').classList.add('hidden');
 }
 
+window.evaluarExcepcionesFormularioAlta = function(tipoRegla) {
+  const opcionCortesia = document.getElementById('opt-alta-cortesia');
+  const selectorCondicion = document.getElementById('form-alta-condicion');
+  
+  if (!opcionCortesia || !selectorCondicion) return;
+
+  if (tipoRegla === 'aniversario') {
+    opcionCortesia.style.display = 'none';
+    if (selectorCondicion.value === 'prueba') {
+      selectorCondicion.value = 'deuda';
+      window.evaluarCamposComercialesAlta('deuda');
+    }
+  } else {
+    opcionCortesia.style.display = 'block';
+  }
+}
+
+window.evaluarCamposComercialesAlta = function(condicionSeleccionada) {
+  const contenedorComercial = document.getElementById('contenedor-comercial-alta');
+  if (!contenedorComercial) return;
+
+  if (condicionSeleccionada === 'pago') {
+    contenedorComercial.classList.remove('hidden');
+    const selectPeriodo = document.getElementById('form-alta-periodo');
+    if (selectPeriodo && window.AppConfig?.mesesComerciales) {
+      selectPeriodo.innerHTML = window.AppConfig.mesesComerciales.map(m => 
+        `<option value="${m.numero}">${m.nombre}</option>`
+      ).join('');
+    }
+  } else {
+    contenedorComercial.classList.add('hidden');
+  }
+}
+
 window.verificarSiEsAdherenteAlta = async function() {
   const selectTipo = document.getElementById('form-tipo');
   if (!selectTipo) return;
-  
   const tipoSeleccionado = selectTipo.value;
   const rolPrincipalConfig = window.AppConfig?.terminos?.rolPrincipal || 'Titular';
 
-  // Regla de Negocio: Si el plan elegido contiene la palabra Adherente, abrimos el vinculador
   if (tipoSeleccionado.toLowerCase().includes('adherente')) {
     try {
       const res = await fetch('http://localhost:3000/dashboard');
       const datos = await res.json();
-      
-      // Filtramos los socios que coincidan con tu rolPrincipal ("Titular")
       const titulares = datos.socios.filter(s => s.tipo === rolPrincipalConfig);
-      
       const selectTitular = document.getElementById('form-id-titular');
       if (titulares.length === 0) {
         selectTitular.innerHTML = `<option value="">⚠️ No hay ${rolPrincipalConfig}es registrados</option>`;

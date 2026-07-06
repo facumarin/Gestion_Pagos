@@ -35,7 +35,16 @@ const CONFIG_INSTITUCION = {
   planesDisponibles: ["Individual", "Titular", "Adherente", "Fútbol Infantil", "Gimnasio"],
 
   montoBaseDefault: 5000.00,
- 
+  // 📋 Períodos habilitados para cobros y altas adelantadas (SaaS Marca Blanca)
+  mesesComerciales: [
+    { numero: 6, nombre: "Junio" },
+    { numero: 7, nombre: "Julio" },
+    { numero: 8, nombre: "Agosto" },
+    { numero: 9, nombre: "Septiembre" },
+    { numero: 10, nombre: "Octubre" },
+    { numero: 11, nombre: "Noviembre" },
+    { numero: 12, nombre: "Diciembre" }
+  ]
 };
 
 window.AppConfig = CONFIG_INSTITUCION;

@@ -95,27 +95,44 @@
 
         <!-- VISTA DE CONTENIDO PRINCIPAL -->
         <main class="flex-1 p-6 md:p-10 relative">
-            <!-- FECHA Y HORA DE MARCA BLANCA -->
-            <div class="absolute top-6 right-6 md:top-10 md:right-10 text-right bg-slate-900 text-white px-5 py-2.5 rounded-xl shadow font-medium border border-slate-800 min-w-[220px] hidden sm:block">
-                <div id="txt-fecha" class="text-xs text-blue-400 font-semibold uppercase tracking-wider">Cargando fecha...</div>
-                <div id="txt-hora" class="text-2xl font-bold tracking-tight mt-0.5">00:00:00</div>
-            </div>
+           <!-- CONTENEDOR DE ENCABEZADO GLOBAL (Flexbox Autónomo) -->
+    <div class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 p-6 bg-white rounded-2xl border border-gray-100 shadow-sm">
+        
+        <!-- ENCABEZADO (Crece y ocupa el espacio disponible) -->
+        <header class="flex-1">
+            <div class="flex items-center gap-3 flex-wrap">
+                <h2 id="titulo-pantalla" class="text-3xl font-black tracking-tight text-gray-900">Panel de Control</h2>
+                <!-- Badge dinámico neutral para marca blanca -->
+              <!-- Badge Dinámico Reactivo a la API (Reemplazo quirúrgico para tu HTML) -->
+<span id="badge-conexion" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100 transition-all duration-300">
+    <span id="dot-conexion" class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+    <span id="txt-conexion">Conectando...</span>
+</span>
 
-            <!-- ENCABEZADO GLOBAL -->
-            <header class="mb-8 pr-0 sm:pr-[240px]">
-                <h2 id="titulo-pantalla" class="text-3xl font-bold text-gray-900">Panel de Control</h2>
-                <p id="subtitulo-pantalla" class="text-gray-500 mt-1">Estado de socios y recaudación en tiempo real.</p>
-            </header>
-    
+            </div>
+            <p id="subtitulo-pantalla" class="text-gray-500 mt-1.5 text-sm md:text-base font-medium">Estado de socios y recaudación en tiempo real.</p>
+        </header>
+
+        <!-- FECHA Y HORA DE MARCA BLANCA (Se alinea solo a la derecha en pantallas grandes) -->
+        <div class="bg-slate-900 text-white px-5 py-3 rounded-xl shadow-inner text-left sm:text-right min-w-[220px] shrink-0 border border-slate-800">
+            <div id="txt-fecha" class="text-[10px] font-bold tracking-widest text-slate-400 uppercase">Cargando fecha...</div>
+            <div id="txt-hora" class="text-2xl font-mono font-bold tracking-tight mt-0.5 text-blue-400">00:00:00</div>
+        </div>
+        
+    </div>
+
             <!-- PANTALLA 1: DASHBOARD (SEMAFORO INTERACTIVO) -->
 <section id="vista-dashboard" class="space-y-8">
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         
         <!-- Total Registros (Azul) -->
-        <div onclick="filtrarPorSemaforo('Todos')" class="bg-white rounded-xl p-6 shadow-xs border border-gray-100 flex items-center justify-between cursor-pointer hover:shadow-md transition">
+        <div onclick="filtrarPorSemaforo('Todos')" class="bg-white rounded-xl p-6 shadow-xs border border-l-4 border-l-blue-500  border-gray-100 flex items-center justify-between cursor-pointer hover:shadow-md transition">
             <div>
-                <p class="text-xs font-bold uppercase text-blue-600 tracking-wider">Total Registrados</p>
+                <p class="text-xs font-bold text-blue-600 tracking-wider">Total Registrados</p>
                 <h3 class="text-3xl font-black text-blue-700 mt-1" id="txt-total">0</h3>
+                <div>
+                    <p class="text-xs text-blue-500 mt-2">Registrados Activos</p>
+                 </div>
             </div>
             <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                 <i class="fas fa-users text-blue-600 text-xl"></i>
@@ -125,8 +142,11 @@
         <!-- Al Día (Verde) -->
         <div onclick="filtrarPorSemaforo('Verde')" class="bg-white rounded-xl p-6 shadow-xs border-l-4 border-l-emerald-500 border-gray-100 flex items-center justify-between cursor-pointer hover:shadow-md transition">
             <div>
-                <p class="text-xs font-bold uppercase text-emerald-600 tracking-wider">Pagos al Día</p>
+                <p class="text-xs font-bold text-emerald-600 tracking-wider">Pagos al Día</p>
                 <h3 class="text-3xl font-black text-emerald-700 mt-1" id="txt-verdes">0</h3>
+                 <div>
+                    <p class="text-xs text-emerald-500 mt-2">Sin deudas Pendientes</p>
+                 </div>
             </div>
             <div class="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
                 <i class="fas fa-check-circle text-emerald-600 text-xl"></i>
@@ -136,20 +156,28 @@
         <!-- Pendientes (Amarillo) -->
         <div onclick="filtrarPorSemaforo('Amarillo')" class="bg-white rounded-xl p-6 shadow-xs border-l-4 border-l-amber-500 border-gray-100 flex items-center justify-between cursor-pointer hover:shadow-md transition">
             <div>
-                <p class="text-xs font-bold uppercase text-amber-600 tracking-wider">Próximo a Vencer</p>
+                <p class="text-xs font-bold text-amber-600 tracking-wider">Próximo a Vencer (7días)</p>
                 <h3 class="text-3xl font-black text-amber-700 mt-1" id="txt-amarillos">0</h3>
+                 <div>
+                    <p class="text-xs text-yellow-500 mt-2">Vencen esta semana</p>
+                 </div>
             </div>
+           
             <div class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
                 <i class="fas fa-clock text-amber-600 text-xl"></i>
             </div>
+           
         </div>
 
         <!-- Morosos (Rojo) -->
    <!-- REEMPLAZO QUIRÚRGICO DE CONTENEDORES (INDEX.HTML) -->
         <div onclick="filtrarPorSemaforo('Rojo')" class="bg-white rounded-xl p-6 shadow-xs border-l-4 border-l-rose-500 border-gray-100 flex items-center justify-between cursor-pointer hover:shadow-md transition">
             <div>
-                <p class="text-xs font-bold uppercase text-rose-600 tracking-wider">Pagos Vencidos</p>
+                <p class="text-xs font-bold text-rose-600 tracking-wider">Pagos Vencidos</p>
                 <h3 class="text-3xl font-black text-rose-700 mt-1" id="txt-rojos">0</h3>
+                  <div>
+                    <p class="text-xs text-rose-500 mt-2">Requieren atención inmediata</p>
+                 </div>
             </div>
             <div class="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center">
                 <i class="fas fa-exclamation-triangle text-rose-600 text-xl"></i>
@@ -221,97 +249,168 @@
             </section>
 
             <!-- PANTALLA 3: CUOTAS (Reportes Contables) -->
-            <section id="vista-cuotas" class="hidden space-y-6">
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <div class="bg-white p-5 rounded-xl shadow border border-gray-100">
-                        <p class="text-xs font-bold uppercase tracking-wider text-gray-400">Recaudación Estimada</p>
-                        <h4 class="text-2xl font-black text-slate-900 mt-1" id="txt-caja-estimada">$0,00</h4>
-                        <p class="text-xs text-gray-400 mt-1">Total si todos pagan este mes.</p>
-                    </div>
-                    <div class="bg-white p-5 rounded-xl shadow border border-gray-100 border-l-4 border-emerald-500">
-                        <p class="text-xs font-bold uppercase tracking-wider text-emerald-600">Caja Real Cobrada</p>
-                        <h4 class="text-2xl font-black text-emerald-600 mt-1" id="txt-caja-real">$0,00</h4>
-                        <p class="text-xs text-gray-400 mt-1">Dinero efectivamente ingresado.</p>
-                    </div>
-                    <div class="bg-white p-5 rounded-xl shadow border border-gray-100 border-l-4 border-rose-500">
-                        <p class="text-xs font-bold uppercase tracking-wider text-rose-600">Total Adeudado (Mora)</p>
-                        <h4 class="text-2xl font-black text-rose-600 mt-1" id="txt-caja-mora">$0,00</h4>
-                        <p class="text-xs text-gray-400 mt-1">Capital que falta cobrar.</p>
-                    </div>
-                </div>
-                <div class="bg-white rounded-xl shadow border border-gray-200 p-6">
-                    <h4 class="text-lg font-bold text-gray-900 mb-2">Exportar Reportes Oficiales</h4>
-                    <p class="text-sm text-gray-500 mb-6">Descarga el listado consolidado de socios con sus estados de cuenta para auditorías o balances.</p>
-                    <div class="flex flex-wrap gap-4">
-                        <button onclick="exportarExcelContable()" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 px-5 rounded-xl shadow transition text-sm cursor-pointer shadow-emerald-100">Descargar Reporte Excel (.csv)</button>
-                        <button onclick="exportarPDFContable()" class="flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold py-2.5 px-5 rounded-xl shadow transition text-sm cursor-pointer shadow-rose-100">Imprimir Balance PDF</button>
-                    </div>
-                </div>
-            </section>
+   <section id="vista-cuotas" class="hidden space-y-6">
+       
+        <!-- 🎛️ AQUÍ ENTRÓ EL ENCABEZADO CONTROLADOR DINÁMICO DESDE/HASTA -->
+        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-5 rounded-2xl border border-gray-100 shadow-xs text-left mb-6">
+            <div>
+                <h4 class="font-black text-gray-950 text-base flex items-center gap-2">
+                    <i class="fa-solid fa-money-check-dollar text-amber-500"></i> Auditoría de Aranceles
+                </h4>
+                <p class="text-[11px] text-gray-400 font-sans mt-0.5">Control de cobros percibidos y estados de cuenta consolidados.</p>
+            </div>
+            
+            <div class="flex flex-wrap items-center gap-4 w-full lg:w-auto">
+                <!-- Checkbox Activador de Rangos -->
+                <label class="flex items-center gap-1.5 text-xs font-bold text-gray-500 uppercase cursor-pointer select-none">
+                    <input type="checkbox" id="check-habilitar-rango" onchange="window.evaluarEstructuraFiltroRango()" class="w-4 h-4 rounded text-blue-600 border-gray-300 focus:ring-blue-500">
+                    <span>🗓️ Rango Período</span>
+                </label>
 
-            <!-- PANTALLA 4: CAJA Y CONTABILIDAD (MÓDULO EXTENDIDO) -->
-            <section id="seccion-caja" class="hidden space-y-6">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div>
-                        <h2 class="text-2xl font-black text-gray-900 tracking-tight">Caja y Contabilidad</h2>
-                        <p class="text-sm text-gray-500 mt-0.5">Control centralizado de flujos de efectivo, cuentas bancarias y egresos.</p>
+                <div class="flex items-center gap-2">
+                    <!-- Selector Desde -->
+                    <div class="flex items-center gap-1">
+                        <span id="lbl-caja-desde" class="text-[10px] font-bold uppercase text-gray-400 hidden">Desde:</span>
+                        <select id="select-cuotas-mes-desde" onchange="window.recalcularMetricasCuotasPorMes()" class="px-3 py-2 border border-gray-300 rounded-xl text-xs bg-white outline-none focus:ring-2 focus:ring-blue-500 font-sans text-gray-800 font-semibold cursor-pointer shadow-sm">
+                            <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option><option value="4">Abril</option><option value="5">Mayo</option>
+                            <option value="6" selected>Junio</option>
+                            <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+                        </select>
                     </div>
-                    <div class="flex items-center gap-3 w-full sm:w-auto">
-                        <button onclick="abrirModalMovimientoCaja('Ingreso')" class="flex-1 sm:flex-none px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm shadow-md shadow-emerald-100 flex items-center justify-center gap-1.5 cursor-pointer transition">
-                            <span>Registrar Ingreso</span>
-                        </button>
-                        <button onclick="abrirModalMovimientoCaja('Egreso')" class="flex-1 sm:flex-none px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-sm shadow-md shadow-rose-100 flex items-center justify-center gap-1.5 cursor-pointer transition">
-                            <span>Registrar Egreso</span>
-                        </button>
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="bg-white rounded-xl p-6 shadow-xs border border-gray-100 flex items-center justify-between">
-                        <div>
-                            <p class="text-xs font-bold uppercase text-gray-400 tracking-wider">Caja Efectivo</p>
-                            <h3 class="text-3xl font-black text-slate-800 mt-1" id="txt-saldo-efectivo">$0,00</h3>
-                        </div>
-                        <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center text-xl font-bold">💵</div>
-                    </div>
-                    <div class="bg-white rounded-xl p-6 shadow-xs border border-gray-100 flex items-center justify-between">
-                        <div>
-                            <p class="text-xs font-bold uppercase text-gray-400 tracking-wider">Banco / Transferencias</p>
-                            <h3 class="text-3xl font-black text-slate-800 mt-1" id="txt-saldo-banco">$0,00</h3>
-                        </div>
-                        <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-xl font-bold">🏦</div>
-                    </div>
-                    <div class="bg-white rounded-xl p-6 shadow-xs border border-gray-100 flex items-center justify-between bg-slate-900 text-white">
-                        <div>
-                            <p class="text-xs font-bold uppercase text-slate-400 tracking-wider">Saldo Total Neto</p>
-                            <h3 class="text-3xl font-black text-white mt-1" id="txt-saldo-neto">$0,00</h3>
-                        </div>
-                        <div class="w-12 h-12 bg-slate-800 text-white rounded-xl flex items-center justify-center text-xl font-bold">📈</div>
+
+                    <!-- Selector Hasta -->
+                    <div id="contenedor-caja-hasta" class="hidden flex items-center gap-1 animate-fade-in">
+                        <span class="text-[10px] font-bold uppercase text-gray-400">Hasta:</span>
+                        <select id="select-cuotas-mes-hasta" onchange="window.recalcularMetricasCuotasPorMes()" class="px-3 py-2 border border-gray-300 rounded-xl text-xs bg-white outline-none focus:ring-2 focus:ring-blue-500 font-sans text-gray-800 font-semibold cursor-pointer shadow-sm">
+                            <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option><option value="4">Abril</option><option value="5">Mayo</option>
+                            <option value="6" selected>Junio</option>
+                            <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+                        </select>
                     </div>
                 </div>
-                <div class="bg-white rounded-2xl border border-gray-100 shadow-xs overflow-hidden">
-                    <div class="p-5 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-gray-50/50">
-                        <h4 class="font-bold text-gray-900 flex items-center gap-2">Historial de Movimientos</h4>
-                        <input type="text" id="input-buscador-caja" placeholder="Buscar por concepto o categoría..." class="w-full sm:max-w-xs px-3 py-1.5 border border-gray-300 rounded-lg text-xs bg-white outline-none focus:ring-2 focus:ring-blue-500 font-sans">
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="bg-slate-50 text-gray-400 uppercase text-[10px] font-bold tracking-wider border-b border-gray-100">
-                                    <th class="p-4">Fecha</th>
-                                    <th class="p-4">Categoría / Concepto</th>
-                                    <th class="p-4 text-center">Medio de Pago</th>
-                                    <th class="p-4 text-center">Tipo</th>
-                                    <th class="p-4 text-right">Monto</th>
-                                    <th class="p-4 text-right">Doc</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tabla-caja-body" class="divide-y divide-gray-50">
-                                <tr><td colspan="6" class="p-8 text-center text-gray-400 text-sm">No se registraron movimientos contables en este período.</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
+            </div>
+        </div>
+
+        <!-- TUS TRES TARJETAS ORIGINALES (Siguen intactas abajo) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="bg-white p-5 rounded-xl shadow border border-gray-100">
+                <p class="text-xs font-bold uppercase tracking-wider text-gray-400">Recaudación Estimada</p>
+                <h4 class="text-2xl font-black text-slate-900 mt-1" id="txt-caja-estimada">$0,00</h4>
+                <p class="text-xs text-gray-400 mt-1">Total si todos pagan este mes.</p>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow border border-gray-100 border-l-4 border-emerald-500">
+                <p class="text-xs font-bold uppercase tracking-wider text-emerald-600">Caja Real Cobrada</p>
+                <h4 class="text-2xl font-black text-emerald-700 mt-1" id="txt-caja-real">$0,00</h4>
+                <p class="text-xs text-gray-400 mt-1">Dinero efectivamente ingresado.</p>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow border border-gray-100 border-l-4 border-rose-500">
+                <p class="text-xs font-bold uppercase tracking-wider text-rose-600">Total Adeudado (Mora)</p>
+                <h4 class="text-2xl font-black text-rose-700 mt-1" id="txt-caja-mora">$0,00</h4>
+                <p class="text-xs text-gray-400 mt-1">Capital que falta cobrar.</p>
+            </div>
+        </div>
+
+        <!-- TU BOX DE EXPORTAR REPORTES (Sigue intacto abajo) -->
+        <div class="bg-white rounded-xl shadow border border-gray-200 p-6">
+            <h4 class="text-lg font-bold text-gray-900 mb-2">Exportar Reportes Oficiales</h4>
+            <p class="text-sm text-gray-500 mb-6">Descarga el listado consolidado de socios con sus estados de cuenta para auditorías o balances.</p>
+            <div class="flex flex-wrap gap-4">
+                <button onclick="exportarExcelContable()" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 px-5 rounded-xl shadow transition text-sm cursor-pointer shadow-emerald-100">Descargar Reporte Excel (.csv)</button>
+                <button onclick="exportarPDFContable()" class="flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold py-2.5 px-5 rounded-xl shadow transition text-sm cursor-pointer shadow-rose-100">Imprimir Balance PDF</button>
+            </div>
+        </div>
+   </section>
+
+
+        <!-- PANTALLA 4: CAJA Y CONTABILIDAD (MÓDULO EXTENDIDO - REPARADO AL 100%) -->
+<section id="seccion-caja" class="hidden space-y-6">
+    <!-- Encabezado Real con tus botones de registro -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+            <h2 class="text-2xl font-black text-gray-900 tracking-tight">Caja y Contabilidad</h2>
+            <p class="text-sm text-gray-500 mt-0.5">Control centralizado de flujos de efectivo, cuentas bancarias y egresos.</p>
+        </div>
+        <div class="flex items-center gap-3 w-full sm:w-auto">
+            <button onclick="abrirModalMovimientoCaja('Ingreso')" class="flex-1 sm:flex-none px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm shadow-md shadow-emerald-100 flex items-center justify-center gap-1.5 cursor-pointer transition">
+                <span>Registrar Ingreso</span>
+            </button>
+            <button onclick="abrirModalMovimientoCaja('Egreso')" class="flex-1 sm:flex-none px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-sm shadow-md shadow-rose-100 flex items-center justify-center gap-1.5 cursor-pointer transition">
+                <span>Registrar Egreso</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Bloque de tus tres tarjetas de saldos -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white rounded-xl p-6 shadow-xs border border-gray-100 flex items-center justify-between">
+            <div>
+                <p class="text-xs font-bold uppercase text-gray-400 tracking-wider">Caja Efectivo</p>
+                <h3 class="text-3xl font-black text-slate-800 mt-1" id="txt-saldo-efectivo">$0,00</h3>
+            </div>
+            <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center text-xl font-bold">💵</div>
+        </div>
+        <div class="bg-white rounded-xl p-6 shadow-xs border border-gray-100 flex items-center justify-between">
+            <div>
+                <p class="text-xs font-bold uppercase text-gray-400 tracking-wider">Banco / Transferencias</p>
+                <h3 class="text-3xl font-black text-slate-800 mt-1" id="txt-saldo-banco">$0,00</h3>
+            </div>
+            <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-xl font-bold">🏦</div>
+        </div>
+        <div class="bg-white rounded-xl p-6 shadow-xs border border-gray-100 flex items-center justify-between bg-slate-900 text-white">
+            <div>
+                <p class="text-xs font-bold uppercase text-slate-400 tracking-wider">Saldo Total Neto</p>
+                <h3 class="text-3xl font-black text-white mt-1" id="txt-saldo-neto">$0,00</h3>
+            </div>
+            <div class="w-12 h-12 bg-slate-800 text-white rounded-xl flex items-center justify-center text-xl font-bold">📈</div>
+        </div>
+    </div>
+
+    <!-- Contenedor central de la grilla contable -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-xs overflow-hidden">
+        <!-- 🎛️ ENCABEZADO REESTRUCTURADO: Sumamos el select de meses alineado a tu input -->
+        <div class="p-5 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-gray-50/50">
+            <h4 class="font-bold text-gray-900 flex items-center gap-2">Historial de Movimientos</h4>
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+                <!-- 🎯 SELECTOR DE MESES COMERCIALES INTEGRADO -->
+                <select id="select-caja-mes-filtro" onchange="window.filtrarCajaPorMesAnio()" class="px-3 py-1.5 border border-gray-300 rounded-lg text-xs bg-white outline-none focus:ring-2 focus:ring-blue-500 font-sans text-gray-800 font-semibold cursor-pointer shadow-sm">
+                    <option value="Todos">📅 Ver Todo el Historial</option>
+                    <option value="1">Enero</option>
+                    <option value="2">Febrero</option>
+                    <option value="3">Marzo</option>
+                    <option value="4">Abril</option>
+                    <option value="5">Mayo</option>
+                    <option value="6" selected>Junio</option>
+                    <option value="7">Julio</option>
+                    <option value="8">Agosto</option>
+                    <option value="9">Septiembre</option>
+                    <option value="10">Octubre</option>
+                    <option value="11">Noviembre</option>
+                    <option value="12">Diciembre</option>
+                </select>
+                <input type="text" id="input-buscador-caja" placeholder="Buscar por concepto o categoría..." class="w-full sm:max-w-xs px-3 py-1.5 border border-gray-300 rounded-lg text-xs bg-white outline-none focus:ring-2 focus:ring-blue-500 font-sans text-gray-700">
+            </div>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50 text-gray-400 uppercase text-[10px] font-bold tracking-wider border-b border-gray-100">
+                        <th class="p-4">Fecha</th>
+                        <th class="p-4">Categoría / Concepto</th>
+                        <th class="p-4 text-center">Medio de Pago</th>
+                        <th class="p-4 text-center">Tipo</th>
+                        <th class="p-4 text-right">Monto</th>
+                        <th class="p-4 text-right">Doc</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-caja-body" class="divide-y divide-gray-50">
+                    <tr><td colspan="6" class="p-8 text-center text-gray-400 text-sm">No se registraron movimientos contables en este período.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
         </main>
     </div>
     <!-- ======================================================= -->
@@ -378,37 +477,72 @@
                         </div>
                     </div>
                 </div>
+<!-- 💵 SECCIÓN 3: INFORMACIÓN DE LA CUOTA (SINCRO COMERCIAL FINAL) -->
+<div class="space-y-3 pt-2 border-t border-gray-100">
+    <h4 class="text-sm font-bold text-emerald-600 flex items-center gap-1.5">
+        <i class="fa-solid fa-money-bill-wave"></i> Información de la Cuota
+    </h4>
+    <div>
+        <label class="block text-xs font-semibold text-gray-700 mb-1">Condición / Arancel *</label>
+        <select id="form-tipo" onchange="verificarSiEsAdherenteAlta()" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 text-gray-700">
+            <!-- Se carga solo -->
+        </select>
+    </div>
+    <div id="contenedor-titular-alta" class="hidden animate-fade-in space-y-1">
+        <label class="block text-xs font-bold text-blue-600 mb-1">👤 Vincular a Socio Titular *</label>
+        <select id="form-id-titular" class="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 text-gray-700">
+            <!-- Se carga solo -->
+        </select>
+    </div>
+    
+    <!-- El Monto Base ahora ocupa de forma prolija todo el ancho del renglón -->
+    <div>
+        <label class="block text-xs font-semibold text-gray-700 mb-1">Monto Base ($) *</label>
+        <input type="number" id="form-monto" step="0.01" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 font-medium">
+    </div>
 
-                <!-- 💵 SECCIÓN 3: INFORMACIÓN DE CUOTA -->
-                <div class="space-y-3 pt-2 border-t border-gray-100">
-                    <h4 class="text-sm font-bold text-emerald-600 flex items-center gap-1.5">💵 Información de la Cuota</h4>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-700 mb-1">Condición / Arancel *</label>
-                        <select id="form-tipo" onchange="verificarSiEsAdherenteAlta()" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 text-gray-700">
-                            <!-- Se carga solo -->
-                        </select>
-                    </div>
-                    <div id="contenedor-titular-alta" class="hidden animate-fade-in space-y-1">
-                        <label class="block text-xs font-bold text-blue-600 mb-1">👤 Vincular a Socio Titular *</label>
-                        <select id="form-id-titular" class="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 text-gray-700">
-                            <!-- Se carga solo -->
-                        </select>
-                    </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-700 mb-1">Monto Base ($) *</label>
-                            <input type="number" id="form-monto" step="0.01" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 font-medium">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-700 mb-1">Fecha Próximo Vencimiento *</label>
-                            <input type="date" id="form-vencimiento" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 text-gray-600">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-700 mb-1">Observaciones / Notas Internas</label>
-                        <textarea id="form-notas" rows="2" placeholder="Notas médicas, observaciones, etc." class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 resize-none font-sans"></textarea>
-                    </div>
-                </div>
+    <div>
+        <label class="block text-xs font-semibold text-gray-700 mb-1">Observaciones / Notas Internas</label>
+        <textarea id="form-notas" rows="2" placeholder="Notas médicas, observaciones, etc." class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 resize-none font-sans"></textarea>
+    </div>
+
+    <!-- SELECTOR DE ALTA PRESET CON REGLAS MARCA BLANCA -->
+    <div class="grid grid-cols-2 gap-3 pt-2 border-t border-gray-100">
+        <div>
+            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Tipo de Vencimiento *</label>
+            <select id="form-alta-tipo-regla" onchange="window.evaluarExcepcionesFormularioAlta(this.value)" class="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 font-sans text-gray-800 cursor-pointer">
+                <option value="calendario">📅 Mes Calendario (Fijo del 1 al 10)</option>
+                <option value="aniversario">🔄 Por Fecha de Alta (Cada 30 días)</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Condición Contable *</label>
+            <select id="form-alta-condicion" onchange="window.evaluarCamposComercialesAlta(this.value)" class="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 font-sans text-gray-800 cursor-pointer">
+                <option value="deuda">🟡 Ingresa con Deuda Pendiente</option>
+                <option value="pago">💵 Abona Primera Cuota Hoy</option>
+                <option id="opt-alta-cortesia" value="prueba">🟢 Período de Prueba / Cortesía</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- CONTENEDOR COMERCIAL DESPLEGABLE: Se abre solo si abona hoy -->
+    <div id="contenedor-comercial-alta" class="hidden grid grid-cols-2 gap-3 p-4 bg-slate-50 border border-gray-200 rounded-xl animate-fade-in">
+      <div>
+  <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Medio de Pago *</label>
+  <select id="form-alta-medio" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 font-sans text-gray-800">
+    <!-- 🌟 SE DEJA VACÍO: Se poblará dinámicamente desde la base de datos -->
+  </select>
+</div>
+
+        <div>
+            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Período a Imputar *</label>
+            <select id="form-alta-periodo" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 font-sans text-gray-800">
+                <!-- Se rellena automáticamente -->
+            </select>
+        </div>
+    </div>
+</div>
+
                 <div class="flex justify-end gap-3 pt-4 border-t border-gray-100">
                     <button type="button" onclick="cerrarModalSocio()" class="px-5 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 text-sm cursor-pointer">Cancelar</button>
                     <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-sm shadow-md shadow-blue-100 cursor-pointer">💾 Guardar Miembro</button>
@@ -456,14 +590,13 @@
                 </div>
             </div>
             
-            <div class="text-left">
-                <label class="block text-xs font-bold uppercase text-gray-400 mb-1 tracking-wide">Medio de Pago *</label>
-                <select id="select-pago-medio" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-emerald-500 text-gray-700 font-sans">
-                    <option value="Efectivo">💵 Efectivo (Caja Chica)</option>
-                    <option value="Transferencia">🏦 Transferencia Bancaria</option>
-                    <option value="Mercado Pago">📱 Mercado Pago</option>
-                </select>
-            </div>
+           <div class="text-left">
+  <label class="block text-xs font-bold uppercase text-gray-400 mb-1 tracking-wide">Medio de Pago *</label>
+  <select id="select-pago-medio" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-emerald-500 text-gray-700 font-sans">
+    <!-- 🌟 SE DEJA VACÍO: Se poblará dinámicamente desde la base de datos -->
+  </select>
+</div>
+
             <div class="text-left">
                 <label class="block text-xs font-bold uppercase text-gray-400 mb-1 tracking-wide">Observaciones (Opcional)</label>
                 <textarea id="txt-pago-notas" rows="2" placeholder="Nro de comprobante, etc." class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-emerald-500 resize-none font-sans"></textarea>
@@ -492,6 +625,66 @@
             <button onclick="cerrarModalExitoSocio()" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-lg shadow transition cursor-pointer text-sm">Entendido</button>
         </div>
     </div>
+<!-- ======================================================= -->
+<!-- 📇 MODAL 5: FICHA HISTÓRICA DETALLADA DEL SOCIO (MVP MARCA BLANCA) -->
+<!-- ======================================================= -->
+<div id="modal-ficha-historica" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
+    <div class="bg-white rounded-2xl max-w-4xl w-full shadow-2xl overflow-hidden border border-gray-100 transform transition-all flex flex-col my-auto max-h-[90vh]">
+        <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
+            <h3 class="text-base font-bold tracking-wide flex items-center gap-2">
+                <i class="fa-solid fa-id-card text-blue-400"></i> Ficha Institucional e Historial Contable
+            </h3>
+            <button onclick="window.cerrarFichaHistoricaSocio()" class="text-white hover:text-gray-300 text-2xl cursor-pointer font-light">&times;</button>
+        </div>
+        
+        <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6 overflow-y-auto font-sans">
+            <!-- Columna Izquierda: Datos del Miembro -->
+            <div class="md:col-span-1 space-y-4 border-r border-gray-100 pr-2 text-left">
+                <div class="flex items-center gap-3 pb-3 border-b border-gray-100">
+                    <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-lg font-black font-mono shadow-sm" id="ficha-avatar-txt">VA</div>
+                    <div>
+                        <h4 id="ficha-nombre-completo" class="font-black text-gray-900 text-base leading-tight">--</h4>
+                        <span id="ficha-estado-badge" class="inline-block text-[10px] font-bold uppercase px-2 py-0.5 rounded-full mt-1 border">--</span>
+                    </div>
+                </div>
+                <div class="space-y-2.5 text-xs text-gray-600">
+                    <div><span class="block font-bold text-gray-400 uppercase text-[9px] tracking-wider">Documento</span><p id="ficha-dni" class="text-sm font-semibold text-gray-800 font-mono">--</p></div>
+                    <div><span class="block font-bold text-gray-400 uppercase text-[9px] tracking-wider">Contacto</span><p id="ficha-telefono" class="text-sm font-semibold text-gray-800">--</p></div>
+                    <div><span class="block font-bold text-gray-400 uppercase text-[9px] tracking-wider">Email</span><p id="ficha-email" class="text-sm font-medium text-gray-700">--</p></div>
+                    <div><span class="block font-bold text-gray-400 uppercase text-[9px] tracking-wider">Asignación / Categoría</span><p id="ficha-actividad" class="text-sm font-semibold text-gray-800">--</p></div>
+                    <div><span class="block font-bold text-gray-400 uppercase text-[9px] tracking-wider">Monto de Cuota</span><p id="ficha-monto" class="text-sm font-mono font-bold text-emerald-600">--</p></div>
+                    <div><span class="block font-bold text-gray-400 uppercase text-[9px] tracking-wider">Próximo Vencimiento</span><p id="ficha-vencimiento" class="text-sm font-semibold text-gray-800">--</p></div>
+                </div>
+            </div>
+
+            <!-- Columna Derecha: Grilla de Pagos -->
+            <div class="md:col-span-2 space-y-3 text-left">
+                <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5 mb-1">
+                    <i class="fa-solid fa-receipt text-emerald-500"></i> Registro Histórico de Recibos
+                </h4>
+                <div class="border border-gray-100 rounded-xl overflow-hidden shadow-inner max-h-[45vh] overflow-y-auto">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-gray-100 text-[10px] font-bold uppercase text-gray-400 tracking-wider">
+                                <th class="p-3 pl-4">Fecha</th>
+                                <th class="p-3 text-center">Recibo</th>
+                                <th class="p-3 text-center">Período</th>
+                                <th class="p-3 text-center">Medio</th>
+                                <th class="p-3 text-right pr-4">Monto</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ficha-tabla-pagos-body" class="divide-y divide-gray-50 text-gray-700 font-sans">
+                            <!-- Se rellena por fetch en caliente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="bg-gray-50 px-6 py-3 border-t border-gray-100 flex justify-end">
+            <button onclick="window.cerrarFichaHistoricaSocio()" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer shadow-md">Cerrar Ficha</button>
+        </div>
+    </div>
+</div>
 
     <!-- ======================================================= -->
     <!-- ✏️ MODAL 4: EDICIÓN DE MIEMBRO AMPLIADA (DOS COLUMNAS)   -->
@@ -610,8 +803,11 @@
                 <div class="flex justify-between"><span>Monto Abonado:</span><span id="lbl-pagoexito-monto" class="font-bold text-gray-900">-</span></div>
                 <div class="flex justify-between"><span>Modalidad:</span><span id="lbl-pagoexito-tipo" class="font-medium text-emerald-600">-</span></div>
             </div>
-            <div class="pt-2">
+            <div class="pt-2 space-y-2">
                 <button onclick="document.getElementById('modal-pago-exito').classList.add('hidden')" class="w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold text-sm shadow-md shadow-emerald-100 cursor-pointer">Entendido</button>
+                                <button onclick="window.emitirComprobanteImpreso()" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase tracking-wider py-2.5 px-4 rounded-xl shadow-md hover:shadow-lg transition cursor-pointer flex items-center justify-center gap-1.5 active:scale-[0.98]">
+    🖨️ Imprimir Comprobante
+</button>
             </div>
         </div>
     </div>
@@ -688,6 +884,81 @@
             </div>
         </div>
     </div>
+
+<!-- 📄 PLANTILLA DE IMPRESIÓN PREMIUM DE RECIBOS CONTABLES -->
+<div id="seccion-recibo-impresion" class="hidden font-sans p-8 max-w-2xl mx-auto border-2 border-dashed border-gray-300 rounded-xl bg-white text-gray-800">
+    <div class="flex justify-between items-center border-b-2 border-gray-900 pb-4 mb-6">
+        <div class="flex items-center gap-3">
+            <div class="w-12 h-12 bg-slate-900 text-white flex items-center justify-center rounded-xl text-xl font-bold font-mono">VA</div>
+            <div class="text-left">
+                <h2 class="text-xl font-black uppercase tracking-tight text-gray-900">Club Atlético Villa Ansaldi</h2>
+                <p class="text-[11px] text-gray-500 font-medium">Panel Integral de Gestión Contable e Institucional</p>
+            </div>
+        </div>
+        <div class="text-right">
+            <span class="block text-xs font-bold text-gray-400 uppercase tracking-widest">Recibo Oficial</span>
+            <h3 id="recibo-num-txt" class="text-lg font-mono font-black text-blue-600">#00000000</h3>
+            <p id="recibo-fecha-txt" class="text-[11px] text-gray-500 font-medium">Fecha: --/--/----</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-6 bg-slate-50 border border-gray-100 rounded-xl p-4 mb-6 text-sm">
+        <div class="text-left">
+            <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Datos del Beneficiario</span>
+            <p id="recibo-socio-nombre" class="font-bold text-gray-900 text-base">--</p>
+            <p id="recibo-socio-dni" class="text-gray-600 font-mono text-xs">DNI: --</p>
+        </div>
+        <div class="text-left">
+            <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Detalle del Arancel</span>
+            <p id="recibo-socio-plan" class="font-semibold text-gray-800">--</p>
+            <p id="recibo-socio-periodo" class="text-xs text-blue-700 bg-blue-50 inline-block px-1.5 py-0.5 rounded font-bold uppercase mt-1">--</p>
+        </div>
+    </div>
+
+    <div class="border border-gray-200 rounded-xl overflow-hidden mb-6 text-sm">
+        <table class="w-full text-left">
+            <thead>
+                <tr class="bg-slate-100 border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                    <th class="p-3 pl-4">Concepto / Descripción</th>
+                    <th class="p-3 text-center">Medio</th>
+                    <th class="p-3 text-right pr-4">Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="border-b border-gray-100 text-gray-700">
+                    <td id="recibo-tabla-concepto" class="p-3 pl-4 font-medium">Pago de Cuota Social Corriente</td>
+                    <td id="recibo-tabla-medio" class="p-3 text-center font-medium">Efectivo</td>
+                    <td id="recibo-tabla-monto" class="p-3 text-right pr-4 font-mono font-bold">$0.00</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="flex justify-between items-end pt-4 border-t border-gray-100">
+        <div class="text-left max-w-xs text-[10px] text-gray-400 leading-tight">
+            <p class="font-bold uppercase mb-1">Comprobante de Pago Válido</p>
+            <p>Este documento certifica que el arancel correspondiente al período descrito ha sido saldado de forma legítima ante la administración del club.</p>
+        </div>
+        <div class="flex flex-col items-center">
+            <div class="w-32 border-b border-gray-400 mb-1"></div>
+            <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Firma Administración</span>
+        </div>
+    </div>
+</div>
+
+<!-- 🔌 ESTILOS CSS SÚPER INYECTORES EN CALIENTE: Ocultan el dashboard al mandar a imprimir -->
+<style>
+@media print {
+    body * { display: none !important; }
+    #seccion-recibo-impresion, #seccion-recibo-impresion * { display: block !important; }
+    #seccion-recibo-impresion table, #seccion-recibo-impresion th, #seccion-recibo-impresion td { display: table !important; }
+    #seccion-recibo-impresion thead { display: table-header-group !important; }
+    #seccion-recibo-impresion tbody { display: table-row-group !important; }
+    #seccion-recibo-impresion tr { display: table-row !important; }
+    #seccion-recibo-impresion th, #seccion-recibo-impresion td { display: table-cell !important; }
+    #seccion-recibo-impresion { border: none !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
+}
+</style>
 
     <!-- ORQUESTACIÓN MODULAR CENTRAL -->
     <script src="config.js"></script>

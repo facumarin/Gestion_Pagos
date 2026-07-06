@@ -1,11 +1,13 @@
-// src/navegacion.js
+// frontend/src/navegacion.js (Orquestador de Solapas)
 
 export function configurarNavegacion() {
-  // 1. Mapeamos las secciones del HTML con sus títulos y subtítulos correlativos
+  // 1. Mapeamos de forma real, independiente y semántica las secciones del index.html
   const vistas = {
     'dashboard': { id: 'vista-dashboard', titulo: 'Panel de Control', sub: 'Estado de socios y recaudación en tiempo real.' },
     'socios': { id: 'vista-socios', titulo: 'Gestión de Socios', sub: 'Padrón de miembros activos, de altas y bajas.' },
-    'cuotas': { id: 'vista-cuotas', titulo: 'Caja y Contabilidad', sub: 'Historial de recaudación y reportes de cuotas.' }
+    'cuotas': { id: 'vista-cuotas', titulo: 'Balances de Cuotas', sub: 'Proyección y auditoría de aranceles sociales de miembros.' },
+    'caja': { id: 'seccion-caja', titulo: 'Caja y Contabilidad', sub: 'Control centralizado de flujos de efectivo, cuentas bancarias y egresos.' }, // 🎯 LA SECCIÓN OPERATIVA QUE ANALIZAMOS HOY
+    'calendario': { id: 'vista-calendario', titulo: 'Control de Horarios', sub: 'Administración de turnos para canchas y reserva del salón.' } // 🗓️ RESERVADO PARA EL PRÓXIMO MÓDULO DE REGLAS
   };
 
   // 2. Definimos la función ruteadora interna
@@ -26,9 +28,14 @@ export function configurarNavegacion() {
       if (elVista) elVista.classList.remove('hidden');
       if (elTitulo) elTitulo.innerText = vistaActiva.titulo;
       if (elSubtitulo) elSubtitulo.innerText = vistaActiva.sub;
+
+      // 🔌 CONECTOR ACTIVO: Al tocar 'Caja y Contabilidad' en la barra lateral, disparamos la carga de Supabase
+      if (pantallaDestino === 'caja' && typeof window.cargarMovimientosCaja === 'function') {
+        window.cargarMovimientosCaja();
+      }
     }
   }
 
-  // 3. Exponemos la función al objeto global
+  // 3. Exponemos la función al objeto global para los botones del menú aside
   window.navegarA = navegarA;
 }
