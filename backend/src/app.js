@@ -7,6 +7,7 @@ import { RegistrarSocio } from './use-cases/RegistrarSocio.js';
 import { ObtenerDashboard } from './use-cases/ObtenerDashboard.js';
 import { RegistrarPagoCuota } from './use-cases/RegistrarPagoCuota.js';
 import { RegistrarSocioCompleto } from './use-cases/RegistrarSocioCompleto.js';
+import { ObtenerHistorialSocio } from './use-cases/ObtenerHistorialSocio.js';
 
 const app = express();
 app.use(cors());
@@ -17,12 +18,23 @@ const socioRepository = new PostgresSocioRepository();
 const registrarSocioUC =
   new RegistrarSocio(socioRepository);
 
+const registrarSocioCompletoUC =
+  new RegistrarSocioCompleto(
+    socioRepository,
+    supabase,
+    registrarSocioUC
+  );
+
 const obtenerDashboardUC =
   new ObtenerDashboard(socioRepository);
 
 const registrarPagoCuotaUC =
   new RegistrarPagoCuota(
     socioRepository,
+    supabase
+  );
+const obtenerHistorialSocioUC =
+  new ObtenerHistorialSocio(
     supabase
   );
 
@@ -52,67 +64,18 @@ app.get('/medios-pago', async (req, res) => {
 
 // B. Alta de un miembro
 app.post('/socios', async (req, res) => {
-  // 🔌 Agregamos "condicionIngreso" a la extracción de tu req.body
-  const { registraPagoInicial, montoCuota, altaMesContable, altaMedioPago, condicionIngreso } = req.body;
-
   try {
-    const existe = await socioRepository.buscarPorDni(req.body.dni);
-    if (existe && existe.length > 0) {
-      return res.status(400).json({ error: `El DNI ${req.body.dni} ya está registrado.` });
-    }
-
-    // Guardamos la ficha del miembro en la tabla de socios de Supabase
-    const resultado = await socioRepository.guardar(req.body);
-    const socioCreado = Array.isArray(resultado) ? resultado : resultado;
-
-    // 🧾 REGISTRO RELACIONAL: El dinero SOLO se asienta si la condición es estrictamente 'pago'
-    if (condicionIngreso === 'pago' && registraPagoInicial && socioCreado) {
-      const anioAct = 2026;
-      const mesesTxt = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-
-      // 1. Pescamos la categoría de cuotas en la nube
-      const { data: cat } = await supabase.from('categorias_caja').select('id').eq('nombre', 'Cuota Social / Arancel').maybeSingle();
-
-      if (cat) {
-        // 2. Insertamos la obligación liquidada en tu tabla 'cuotas'
-        const { data: cuota } = await supabase.from('cuotas').insert([{
-          id_socio: socioCreado.id,
-          mes: altaMesContable,
-          anio: anioAct,
-          monto_total: parseFloat(montoCuota || 5000),
-          pagada: true,
-          saldo_pendiente: 0.00
-        }]).select().single();
-
-        if (cuota) {
-          // 3. Insertamos el recibo histórico en tu tabla 'pagos' con el mes y año real elegidos
-          await supabase.from('pagos').insert([{
-            id_cuota: cuota.id,
-            monto_abonado: parseFloat(montoCuota || 5000),
-            forma_pago: altaMedioPago || 'Efectivo', 
-            periodo_mes: altaMesContable,            
-            periodo_anio: anioAct,
-            cobrado_por: 'Administrativo'
-          }]);
-
-          // 4. Insertamos el movimiento contable general para los balances del club
-          await supabase.from('caja_movimientos').insert([{
-            id_categoria: cat.id,
-            id_socio: socioCreado.id,
-            concepto: `Pago Inicial Alta - Período: ${mesesTxt[altaMesContable - 1]} ${anioAct}`,
-            monto: parseFloat(montoCuota || 5000),
-            tipo_pago: altaMedioPago || 'Efectivo'
-          }]);
-        }
-      }
-    }
-
+    const socioCreado =
+      await registrarSocioCompletoUC.ejecutar(
+        req.body
+      );
     res.status(201).json(socioCreado);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    res.status(400).json({
+      error: error.message
+    });
   }
 });
-
 
 // 📡 C. Modificar la ficha completa de un miembro
 app.put('/socios/:id', async (req, res) => {
@@ -136,59 +99,33 @@ app.delete('/socios/:id', async (req, res) => {
 
 // 💵 ENDPOINT DE COBROS INTEGRADO 
 app.post('/socios/:id/cobrar', async (req, res) => {
-
   try {
-
     const resultado =
       await registrarPagoCuotaUC.ejecutar({
         id: req.params.id,
         ...req.body
       });
-
     res.json(resultado);
 
   } catch (error) {
-
     res.status(400).json({
       error: error.message
     });
-
   }
-
 });
 
-// backend/src/app.js - ENDPOINT PARA EXTRAER EL HISTORIAL DE COMPROBANTES DE UN SOCIO
+// ENDPOINT PARA EXTRAER EL HISTORIAL DE COMPROBANTES DE UN SOCIO
 app.get('/socios/:id/pagos', async (req, res) => {
-  const { id } = req.params;
-
   try {
-    // 1. Buscamos todas las cuotas liquidadas que pertenezcan a este ID de socio en internet
-    const { data: cuotas, error: errorCuotas } = await supabase
-      .from('cuotas')
-      .select('id')
-      .eq('id_socio', id);
-
-    if (errorCuotas) throw errorCuotas;
-
-    if (!cuotas || cuotas.length === 0) {
-      return res.json([]); // Si no tiene cuotas, devolvemos un array vacío sin romper la app
-    }
-
-    // Extraemos la lista pura de IDs de cuotas [id1, id2, id3...]
-    const listaIdsCuotas = cuotas.map(c => c.id);
-
-    // 2. 📡 CONSULTA RELACIONAL: Filtramos los recibos de la tabla 'pagos' que calcen con esas cuotas
-    const { data: pagos, error: errorPagos } = await supabase
-      .from('pagos')
-      .select('id, id_cuota, monto_abonado, fecha_pago, forma_pago, periodo_mes, periodo_anio, numero_recibo')
-      .in('id_cuota', listaIdsCuotas)
-      .order('fecha_pago', { ascending: false }); // Los más nuevos arriba de todo
-
-    if (errorPagos) throw errorPagos;
-
-    res.json(pagos || []);
+    const pagos =
+      await obtenerHistorialSocioUC.ejecutar(
+        req.params.id
+      );
+    res.json(pagos);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({
+      error: error.message
+    });
   }
 });
 

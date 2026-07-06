@@ -72,7 +72,6 @@ export class RegistrarSocioCompleto {
             }])
             .select()
             .single();
-
         if (cuota) {
 
           await this.supabase
@@ -100,15 +99,9 @@ export class RegistrarSocioCompleto {
               tipo_pago:
                 altaMedioPago || 'Efectivo'
             }]);
-
         }
-
       }
-
     }
-
     return socioCreado;
-
   }
-
 }
