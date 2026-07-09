@@ -29,7 +29,7 @@ export class RegistrarSocioCompleto {
       socioCreado
     ) {
 
-      const anioAct = 2026;
+    const anioAct = new Date().getFullYear();
 
       const mesesTxt = [
         "Enero",

@@ -152,17 +152,20 @@ export class RegistrarPagoCuota {
 
     }
 
-    await this.supabase
-      .from('pagos')
-      .insert([{
-        id_cuota: cuota.id,
-        monto_abonado: montoValidado,
-        notas_pago: notas || null,
-        forma_pago: nombreMedioTexto,
-        periodo_mes: mesAPagar,
-        periodo_anio: anioAPagar,
-        cobrado_por: 'Administrativo'
-      }]);
+   const { data: pagoGenerado } =
+  await this.supabase
+    .from('pagos')
+    .insert([{
+      id_cuota: cuota.id,
+      monto_abonado: montoValidado,
+      notas_pago: notas || null,
+      forma_pago: nombreMedioTexto,
+      periodo_mes: mesAPagar,
+      periodo_anio: anioAPagar,
+      cobrado_por: 'Administrativo'
+    }])
+    .select()
+    .single();
 
     let nombreMesTexto = periodoTexto;
 
@@ -201,13 +204,14 @@ export class RegistrarPagoCuota {
       montoCuota: montoValidado,
       fechaVencimiento: nuevaFechaVencimiento
     });
-
-    return {
-      success: true,
-      fechaVencimiento: nuevaFechaVencimiento,
-      mesLiquidado: nombreMesTexto,
-      anioLiquidado: anioAPagar
-    };
+//console.log('PAGO GENERADO:', pagoGenerado);
+   return {
+  success: true,
+  fechaVencimiento: nuevaFechaVencimiento,
+  mesLiquidado: nombreMesTexto,
+  anioLiquidado: anioAPagar,
+  numeroRecibo: pagoGenerado.numero_recibo
+};
 
   }
 }
