@@ -3,7 +3,7 @@ export class Cuota {
     this.id = id;
     this.idSocio = idSocio; // ID del socio obligado al pago (Individual o Titular)
     this.mes = mes;         // Número de mes (1 al 12)
-    this.anio = anio;       // Año (ej. 2026)
+    this.anio = anio;       
     this.monto = monto;
     this.pagada = pagada;
     this.fechaPago = fechaPago;
