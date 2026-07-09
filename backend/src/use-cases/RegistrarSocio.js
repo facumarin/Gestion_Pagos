@@ -1,4 +1,4 @@
-import { Socio } from '../domain/Socio.js';
+import { Socio } from '../domain/socio.js';
 
 export class RegistrarSocio {
   // DIP: Recibimos el repositorio por el constructor. 
