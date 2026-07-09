@@ -167,7 +167,8 @@ app.post('/auth/login', async (req, res) => {
 });
 
 
-const PUERTO = 3000;
+const PUERTO = process.env.PORT || 3000;
+
 app.listen(PUERTO, () => {
-  console.log(`🚀 Servidor backend escuchando peticiones en http://localhost:${PUERTO}`);
+  console.log(`🚀 Servidor backend escuchando en puerto ${PUERTO}`);
 });
