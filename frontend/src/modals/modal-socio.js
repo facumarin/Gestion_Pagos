@@ -1,4 +1,6 @@
 // frontend/src/modals/modal-socio.js (Sincronizado Comercial Definitivo)
+import { API_URL } from '../config-api.js';
+import { poblarSelectorMeses } from '../fechas.js';
 
 export function configurarModalSocio(obtenerSociosFn, recargarDashboardFn) {
   const form = document.getElementById('form-nuevo-socio');
@@ -13,7 +15,7 @@ export function configurarModalSocio(obtenerSociosFn, recargarDashboardFn) {
     const anioActual = hoy.getFullYear(); 
     
     let mesSeleccionado = hoy.getMonth() + 1;
-    let medioSeleccionado = 'Efectivo';
+    let medioSeleccionado = null;
     let registraPagoInicial = false;
     let fechaFinalTexto = null; 
 
@@ -51,7 +53,9 @@ export function configurarModalSocio(obtenerSociosFn, recargarDashboardFn) {
       tipo: document.getElementById('form-tipo').value,
       id_titular: document.getElementById('form-id-titular')?.value || null,
       idTitular: document.getElementById('form-id-titular')?.value || null,
-      montoCuota: parseFloat(document.getElementById('form-monto').value) || 5000,
+      montoCuota: parseFloat(
+  document.getElementById('form-monto').value
+) || 0,
       
       fechaVencimiento: fechaFinalTexto,
       fecha_vencimiento: fechaFinalTexto,
@@ -63,13 +67,20 @@ export function configurarModalSocio(obtenerSociosFn, recargarDashboardFn) {
     };
 
     try {
-      const res = await fetch('http://localhost:3000/socios', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(nuevoSocio)
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Error al guardar.");
+
+  const res = await fetch(`${API_URL}/socios`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(nuevoSocio)
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.error || 'Error al guardar.');
+  }
 
       window.cerrarModalSocio();
       document.getElementById('lbl-exito-nombre').innerText = `${data.nombre} ${data.apellido || ''}`.trim();
@@ -89,7 +100,7 @@ window.abrirModalSocio = function() {
     selectTipo.innerHTML = window.AppConfig.planesDisponibles.map(p => 
       `<option value="${p}">${p}</option>`
     ).join('');
-    document.getElementById('form-monto').value = window.AppConfig.montoBaseDefault || 5000;
+    document.getElementById('form-monto').value =  window.AppConfig.montoBaseDefault;
   }
 
   const selectRegla = document.getElementById('form-alta-tipo-regla');
@@ -135,17 +146,12 @@ window.evaluarCamposComercialesAlta = function(condicionSeleccionada) {
   const contenedorComercial = document.getElementById('contenedor-comercial-alta');
   if (!contenedorComercial) return;
 
-  if (condicionSeleccionada === 'pago') {
-    contenedorComercial.classList.remove('hidden');
-    const selectPeriodo = document.getElementById('form-alta-periodo');
-    if (selectPeriodo && window.AppConfig?.mesesComerciales) {
-      selectPeriodo.innerHTML = window.AppConfig.mesesComerciales.map(m => 
-        `<option value="${m.numero}">${m.nombre}</option>`
-      ).join('');
-    }
-  } else {
-    contenedorComercial.classList.add('hidden');
-  }
+ if (condicionSeleccionada === 'pago') {
+  contenedorComercial.classList.remove('hidden');
+  poblarSelectorMeses('form-alta-periodo');
+} else {
+  contenedorComercial.classList.add('hidden');
+}
 }
 
 window.verificarSiEsAdherenteAlta = async function() {
@@ -156,7 +162,7 @@ window.verificarSiEsAdherenteAlta = async function() {
 
   if (tipoSeleccionado.toLowerCase().includes('adherente')) {
     try {
-      const res = await fetch('http://localhost:3000/dashboard');
+      const res = await fetch(`${API_URL}/dashboard`);
       const datos = await res.json();
       const titulares = datos.socios.filter(s => s.tipo === rolPrincipalConfig);
       const selectTitular = document.getElementById('form-id-titular');

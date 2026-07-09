@@ -5,8 +5,12 @@ import { obtenerDatosDashboard } from './src/api.js';
 import { configurarModalPago } from './src/modals/modal-pago.js';
 import { configurarModalSocio } from './src/modals/modal-socio.js';
 import { exportarExcelContable, exportarPDFContable } from './src/reportes.js';
+import { obtenerBalanceCuotas } from './src/api-cuotas.js';
+import { API_URL } from './src/config-api.js';
+import { MESES, poblarSelectorMeses,  obtenerMesActual} from './src/fechas.js';
 
 let todosLosSocios = [];
+let ultimoComprobante = null;
 
 function aplicarConfiguracionVisual() {
   const cfg = window.AppConfig;
@@ -60,7 +64,7 @@ async function cargarDashboard() {
     renderizarPadronSocios(todosLosSocios); 
     
     // Disparamos la sincronización de las tarjetas de aranceles
-    window.recalcularMetricasCuotasPorMes();
+    //window.recalcularMetricasCuotasPorMes();
 
     
     if (txt) txt.innerText = "Sincronizado";
@@ -69,11 +73,25 @@ async function cargarDashboard() {
   } catch (error) {
     console.error("Error al sincronizar dashboard:", error);
     if (document.getElementById('tabla-socios-body')) {
-      document.getElementById('tabla-socios-body').innerHTML = `<tr><td colspan="5" class="p-8 text-center text-red-500 font-semibold">❌ No se pudo conectar con el backend (Puerto 3000).</td></tr>`;
+      document.getElementById('tabla-socios-body').innerHTML = `<tr><td colspan="5" class="p-8 text-center text-red-500 font-semibold">❌ No se pudo conectar con el servidor.</td></tr>`;
     }
     if (txt) txt.innerText = "Desconectado";
     if (dot) dot.className = "w-1.5 h-1.5 rounded-full bg-rose-500";
     if (badge) badge.className = "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-100 transition-all duration-300";
+  }
+}
+
+async function cargarBalanceCuotas() {
+  try {
+    const balance = await obtenerBalanceCuotas();
+    document.getElementById('txt-caja-estimada').innerText = `$${balance.proyectado.toLocaleString('es-AR')}`;
+    document.getElementById('txt-caja-real').innerText = `$${balance.cobrado.toLocaleString('es-AR')}`;
+    document.getElementById('txt-caja-mora').innerText = `$${balance.pendiente.toLocaleString('es-AR')}`;
+  } catch (error) {
+    console.error(
+      'Error al cargar balance:',
+      error
+    );
   }
 }
 
@@ -159,7 +177,7 @@ window.abrirModalEditarSocio = function(idSocio) {
   document.getElementById('edit-form-email').value = socio.email || '';
   document.getElementById('edit-form-direccion').value = socio.direccion || '';
   document.getElementById('edit-form-tipo').value = socio.tipo || '';
-  document.getElementById('edit-form-monto').value = socio.montoCuota || 5000;
+  document.getElementById('edit-form-monto').value = socio.montoCuota || 0;
   document.getElementById('edit-form-notas').value = socio.notas || '';
   document.getElementById('edit-form-actividad').value = socio.actividad || '';
   document.getElementById('edit-form-categoria').value = socio.categoria || '';
@@ -182,7 +200,7 @@ window.toggleBajaSocio = function(idSocio) {
   const btnEjecutar = document.getElementById('btn-baja-ejecutar');
   btnEjecutar.onclick = async function() {
     try {
-      await fetch(`http://localhost:3000/socios/${idSocio}`, {
+      await fetch(`${API_URL}/socios/${idSocio}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...socio, estado: proximoEstado })
@@ -201,7 +219,9 @@ window.eliminarSocioPadrón = function(idSocio, nombreSocio) {
   const btnEjecutar = document.getElementById('btn-eliminar-ejecutar');
   btnEjecutar.onclick = async function() {
     try {
-      const res = await fetch(`http://localhost:3000/socios/${idSocio}`, { method: 'DELETE' });
+      const res = await fetch(`${API_URL}/socios/${idSocio}`, {
+  method: 'DELETE'
+});
       if (!res.ok) throw new Error();
       document.getElementById('modal-eliminar-confirmar').classList.add('hidden');
       await cargarDashboard();
@@ -256,7 +276,7 @@ function actualizarDiseñoBotonesTipoRecordatorio() {
 function armarPlantillaMensajeTexto() {
   if (!socioWhatsAppActivo) return;
   const txt = tipoNotificacionActual === 'vencido' ? 'VENCIDO' : 'próxima a vencer';
-  document.getElementById('txt-wa-cuerpo').value = `Hola ${socioWhatsAppActivo.nombre},\n\nTe recordamos que tu cuota de $${socioWhatsAppActivo.montoCuota || 5000} se encuentra en estado ${txt}.`;
+  document.getElementById('txt-wa-cuerpo').value = `Hola ${socioWhatsAppActivo.nombre},\n\nTe recordamos que tu cuota de $${socioWhatsAppActivo.montoCuota || 0} se encuentra en estado ${txt}.`;
 }
 
 window.dispararPestañaWhatsApp = function () {
@@ -274,8 +294,14 @@ window.abrirModalConfirmarPago = function (idSocio) {
   if (!socio) return;
   socioCobroActivo = socio;
   modalidadCobroActual = 'total';
-  let montoPlan = parseFloat(socio.montoCuota || socio.monto_cuota);
-  if (isNaN(montoPlan) || montoPlan === 0) montoPlan = window.AppConfig?.montoBaseDefault || 5000;
+let montoPlan = parseFloat(socio.montoCuota || socio.monto_cuota);
+
+if (isNaN(montoPlan) || montoPlan <= 0) {
+  alert(
+    'El socio no tiene una cuota válida configurada. Revise la ficha antes de cobrar.'
+  );
+  return;
+}
   
   if (window.AppConfig?.modulosActivos?.recargosMora && socio.estadoSemaforo === 'Rojo') {
     montoPlan += (montoPlan * 5) / 100;
@@ -285,9 +311,9 @@ window.abrirModalConfirmarPago = function (idSocio) {
   if (fechaRef) dateObj = new Date(typeof fechaRef === 'string' ? fechaRef.split('T')[0].replace(/-/g, '/') : fechaRef);
   if (isNaN(dateObj.getTime())) dateObj = new Date();
 
-  const mesesNombres = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+  
   document.getElementById('pago-socio-nombre').innerText = `${socio.nombre} ${socio.apellido || ''}`;
-  document.getElementById('pago-servicio-txt').innerHTML = `${socio.tipo || 'Cuota'} <span class="text-blue-600 bg-blue-50 px-2 py-0.5 rounded text-xs ml-1 font-black uppercase">Abona: ${mesesNombres[dateObj.getMonth()]} ${dateObj.getFullYear()}</span>`;
+  document.getElementById('pago-servicio-txt').innerHTML = `${socio.tipo || 'Cuota'} <span class="text-blue-600 bg-blue-50 px-2 py-0.5 rounded text-xs ml-1 font-black uppercase">Abona: ${MESES[dateObj.getMonth()]} ${dateObj.getFullYear()}</span>`;
   document.getElementById('pago-monto-txt').innerText = `$${montoPlan.toLocaleString('es-AR', {minimumFractionDigits: 2})}`;
   document.getElementById('pago-vencimiento-txt').innerText = fechaRef ? new Date(fechaRef).toLocaleDateString('es-AR') : '-';
   document.getElementById('txt-pago-notas').value = '';
@@ -325,17 +351,27 @@ window.procesarCobroDefinitivo = async function () {
   if (!socioCobroActivo) return;
   const notas = document.getElementById('txt-pago-notas').value.trim();
   const medio = document.getElementById('select-pago-medio').value;
-  let montoACobrar = parseFloat(socioCobroActivo.montoCuota || 5000);
+  let montoACobrar = parseFloat(socioCobroActivo.montoCuota || 0);
   if (modalidadCobroActual === 'parcial') montoACobrar = parseFloat(document.getElementById('input-monto-parcial').value) || 0;
   
   try {
-    const res = await fetch(`http://localhost:3000/socios/${socioCobroActivo.id}/cobrar`, {
+    const res = await fetch(`${API_URL}/socios/${socioCobroActivo.id}/cobrar`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ monto: montoACobrar, medioPago: medio, notas, tipoVencimiento: 'calendario' })
     });
     const respuestaAPI = await res.json();
-    if (!res.ok) throw new Error(respuestaAPI.error || "Error de respuesta");
+
+if (!res.ok) {
+  throw new Error(
+    respuestaAPI.error || "Error de respuesta"
+  );
+}
+
+ultimoComprobante = {
+  numeroRecibo: respuestaAPI.numeroRecibo,
+  periodo: `${respuestaAPI.mesLiquidado} ${respuestaAPI.anioLiquidado}`
+};   
     document.getElementById('modal-confirmar-pago').classList.add('hidden');
     document.getElementById('lbl-pagoexito-nombre').innerText = `${socioCobroActivo.nombre} ${socioCobroActivo.apellido || ''}`;
     document.getElementById('lbl-pagoexito-monto').innerText = `$${montoACobrar.toLocaleString('es-AR', {minimumFractionDigits: 2})}`;
@@ -351,19 +387,22 @@ window.emitirComprobanteImpreso = function() {
   if (!socioCobroActivo) return;
   const cfg = window.AppConfig || { nombre: "Institución", subtitulo: "Gestión", terminos: { cuotaConcepto: "Cuota" } };
   const medio = document.getElementById('select-pago-medio').options[document.getElementById('select-pago-medio').selectedIndex]?.text || 'Efectivo';
-  let montoAbonado = parseFloat(socioCobroActivo.montoCuota || 5000);
+  let montoAbonado = parseFloat(socioCobroActivo.montoCuota || 0);
   if (modalidadCobroActual === 'parcial') montoAbonado = parseFloat(document.getElementById('input-monto-parcial').value) || 0;
   
   // Sincronización Marca Blanca Nativa
   document.getElementById('recibo-nombre-institucion').innerText = cfg.nombre;
   document.getElementById('recibo-subtitulo-institucion').innerText = cfg.subtitulo;
-  document.getElementById('recibo-logo-marca').innerText = String(cfg.nombre).substring(0, 2).toUpperCase();
-  document.getElementById('recibo-num-txt').innerText = `#${String(Math.floor(10000000 + Math.random() * 90000000))}`;
+  const logo =  document.getElementById('recibo-logo-img');
+if (logo) {
+  logo.src = cfg.escudoUrl;
+}
+document.getElementById('recibo-num-txt').innerText = ultimoComprobante?.numeroRecibo? `#${ultimoComprobante.numeroRecibo}` : '#----';
   document.getElementById('recibo-fecha-txt').innerText = `Fecha: ${new Date().toLocaleDateString('es-AR')}`;
   document.getElementById('recibo-socio-nombre').innerText = `${socioCobroActivo.nombre} ${socioCobroActivo.apellido || ''}`.trim();
   document.getElementById('recibo-socio-dni').innerText = `DNI: ${socioCobroActivo.dni}`;
   document.getElementById('recibo-socio-plan').innerText = `Arancel: ${socioCobroActivo.tipo || 'Cuota Social'}`;
-  document.getElementById('recibo-socio-periodo').innerText = `Período corriente saldado`;
+  document.getElementById('recibo-socio-periodo').innerText = ultimoComprobante?.periodo || 'Período saldado';
   document.getElementById('recibo-tabla-concepto').innerText = `${cfg.nombre} - ${cfg.terminos.cuotaConcepto}`;
   document.getElementById('recibo-tabla-medio').innerText = medio;
   document.getElementById('recibo-tabla-monto').innerText = `$${montoAbonado.toLocaleString('es-AR', {minimumFractionDigits: 2})}`;
@@ -372,12 +411,12 @@ window.emitirComprobanteImpreso = function() {
 
 async function inicializarMediosDePagoPantalla() {
   try {
-    const respuesta = await fetch('http://localhost:3000/medios-pago');
+   const respuesta = await fetch(`${API_URL}/medios-pago`);
     if (!respuesta.ok) throw new Error();
     const medios = await respuesta.json();
     const opcionesHTML = medios.map(m => `<option value="${m.id}">${m.emoji || ' '} ${m.nombre}</option>`).join('');
     
-    const selectAlta = document.getElementById('select-pago-medio-alta');
+    const selectAlta = document.getElementById('form-alta-medio');
     const selectCobro = document.getElementById('select-pago-medio');
     if (selectAlta) selectAlta.innerHTML = opcionesHTML;
     if (selectCobro) selectCobro.innerHTML = opcionesHTML;
@@ -395,7 +434,7 @@ window.verFichaDetalladaSocio = async function(idSocio) {
   document.getElementById('ficha-telefono').innerText = socio.telefono || 'Sin teléfono';
   document.getElementById('ficha-email').innerText = socio.email || 'Sin correo electrónico';
   document.getElementById('ficha-actividad').innerText = `${socio.actividad || 'General'} / ${socio.categoria || 'Socio'}`;
-  document.getElementById('ficha-monto').innerText = `$${parseFloat(socio.montoCuota || 5000).toLocaleString('es-AR', {minimumFractionDigits: 2})}`;
+  document.getElementById('ficha-monto').innerText = `$${parseFloat(socio.montoCuota || 0).toLocaleString('es-AR', {minimumFractionDigits: 2})}`;
   const vencimientoTxt = socio.fechaVencimiento || socio.fecha_vencimiento;
   document.getElementById('ficha-vencimiento').innerText = vencimientoTxt ? vencimientoTxt.split('T')[0] : 'Sin fecha';
   
@@ -408,19 +447,23 @@ window.verFichaDetalladaSocio = async function(idSocio) {
   const tablaPagosBody = document.getElementById('ficha-tabla-pagos-body');
   if (tablaPagosBody) tablaPagosBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-400">Buscando recibos...</td></tr>`;
   try {
-    const res = await fetch(`http://localhost:3000/socios/${idSocio}/pagos`);
+  const res = await fetch(`${API_URL}/socios/${idSocio}/pagos`);
     const pagosHistoricos = await res.json();
     if (!pagosHistoricos || pagosHistoricos.length === 0) {
       tablaPagosBody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-gray-400">Sin comprobantes emitidos.</td></tr>`;
     } else {
-      const mesesNombres = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+      
       tablaPagosBody.innerHTML = pagosHistoricos.map(p => {
         const fechaPagoObj = new Date(p.fecha_pago || p.created_at);
         return `
           <tr class="hover:bg-slate-50/80 transition text-gray-600">
             <td class="p-3 pl-4 font-medium text-gray-400">${fechaPagoObj.toLocaleDateString('es-AR')}</td>
             <td class="p-3 text-center font-mono font-bold text-blue-600">#${String(p.numero_recibo || '-').padStart(4, '0')}</td>
-            <td class="p-3 text-center font-semibold uppercase text-slate-700"><span class="px-1.5 py-0.5 bg-slate-100 rounded text-[10px]">${p.periodo_mes ? mesesNombres[parseInt(p.periodo_mes, 10) - 1] : '-'} ${p.periodo_anio || ''}</span></td>
+            <td class="p-3 text-center font-semibold uppercase text-slate-700"><span class="px-1.5 py-0.5 bg-slate-100 rounded text-[10px]">${p.periodo_mes
+  ? MESES[
+      parseInt(p.periodo_mes, 10) - 1
+    ].substring(0, 3)
+  : '-'} ${p.periodo_anio || ''}</span></td>
             <td class="p-3 text-center font-medium text-gray-500">${p.forma_pago || 'Efectivo'}</td>
             <td class="p-3 text-right pr-4 font-mono font-black text-emerald-600">$${parseFloat(p.monto_abonado || 0).toLocaleString('es-AR', {minimumFractionDigits: 2})}</td>
           </tr>`;
@@ -455,9 +498,21 @@ window.evaluarEstructuraFiltroRango = function() {
 
 window.recalcularMetricasCuotasPorMes = function() {
   const checkActivo = document.getElementById('check-habilitar-rango')?.checked || false;
-  const mesDesde = parseInt(document.getElementById('select-cuotas-mes-desde')?.value || '6', 10);
-  const mesHasta = checkActivo ? parseInt(document.getElementById('select-cuotas-mes-hasta')?.value || '6', 10) : mesDesde;
-  const montoBaseDefault = window.AppConfig?.montoBaseDefault || 5000;
+  const mesDesde = parseInt(
+  document.getElementById('select-cuotas-mes-desde')?.value ||
+  obtenerMesActual(),
+  10
+);
+
+const mesHasta = checkActivo
+  ? parseInt(
+      document.getElementById('select-cuotas-mes-hasta')?.value ||
+      obtenerMesActual(),
+      10
+    )
+  : mesDesde;
+
+  const montoBaseDefault = window.AppConfig?.montoBaseDefault || 0;
 
   const sociosActivos = todosLosSocios.filter(s => s.estado !== 'Inactivo');
   let estimadosMonto = 0; let cobradosMonto = 0; let moraMonto = 0;
@@ -497,9 +552,19 @@ window.renderizarTablaAuditoriaCuotas = function() {
   if (!tbody) return;
 
   const checkActivo = document.getElementById('check-habilitar-rango')?.checked || false;
-  const mesDesde = parseInt(document.getElementById('select-cuotas-mes-desde')?.value || '6', 10);
-  const mesHasta = checkActivo ? parseInt(document.getElementById('select-cuotas-mes-hasta')?.value || '6', 10) : mesDesde;
+ const mesDesde = parseInt(
+  document.getElementById('select-cuotas-mes-desde')?.value ||
+  obtenerMesActual(),
+  10
+);
 
+const mesHasta = checkActivo
+  ? parseInt(
+      document.getElementById('select-cuotas-mes-hasta')?.value ||
+      obtenerMesActual(),
+      10
+    )
+  : mesDesde;
   let filtrados = todosLosSocios.filter(s => s.estado !== 'Inactivo');
 
   filtrados = filtrados.filter(s => {
@@ -537,7 +602,7 @@ window.renderizarTablaAuditoriaCuotas = function() {
         <td class="p-4 font-mono text-gray-600">${s.dni}</td>
         <td class="p-4 text-gray-500">${s.tipo || 'Arancel Social'}</td>
         <td class="p-4 text-center font-medium">${esPagado ? '✅ Percibido' : '❌ Pendiente'}</td>
-        <td class="p-4 text-right font-mono font-black ${esPagado ? 'text-emerald-600' : 'text-rose-600'}">$${parseFloat(s.montoCuota || 5000).toLocaleString('es-AR')},00</td>
+        <td class="p-4 text-right font-mono font-black ${esPagado ? 'text-emerald-600' : 'text-rose-600'}">$${parseFloat(s.montoCuota || 0).toLocaleString('es-AR')},00</td>
         <td class="p-4 text-right pr-6">
           ${esPagado ? `<span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded border border-emerald-100">Emitido</span>` : `<a href="${waUrl}" target="_blank" class="text-xs bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold py-1.5 px-3 rounded border border-rose-200 transition cursor-pointer active:scale-[0.97]">📲 Reclamar</a>`}
         </td>
@@ -559,7 +624,11 @@ document.addEventListener('DOMContentLoaded', () => {
   configurarModalPago(cargarDashboard);
   configurarModalSocio(() => todosLosSocios, cargarDashboard);
   inicializarMediosDePagoPantalla();
+  poblarSelectorMeses('select-cuotas-mes-desde');
+poblarSelectorMeses('select-cuotas-mes-hasta');
+poblarSelectorMeses('select-caja-mes-filtro');
   cargarDashboard();
+  cargarBalanceCuotas();
 
   document.getElementById('input-buscador')?.addEventListener('input', (e) => {
     const txt = e.target.value.toLowerCase().trim();
@@ -585,14 +654,14 @@ document.addEventListener('DOMContentLoaded', () => {
       email: document.getElementById('edit-form-email').value.trim(),
       direccion: document.getElementById('edit-form-direccion').value.trim(),
       tipo: document.getElementById('edit-form-tipo').value.trim(),
-      montoCuota: parseFloat(document.getElementById('edit-form-monto').value) || 5000,
+      montoCuota: parseFloat(document.getElementById('edit-form-monto').value) || 0,
       fechaVencimiento: document.getElementById('edit-form-vencimiento').value,
       actividad: document.getElementById('edit-form-actividad').value.trim(),
       categoria: document.getElementById('edit-form-categoria').value.trim(),
       notas: document.getElementById('edit-form-notas').value.trim()
     };
     try {
-      await fetch(`http://localhost:3000/socios/${idSocio}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datos) });
+      await fetch(`${API_URL}/socios/${idSocio}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datos) });
       document.getElementById('modal-editar-socio').classList.add('hidden');
       document.getElementById('lbl-editexito-nombre').innerText = `${datos.nombre} ${datos.apellido}`;
       document.getElementById('modal-editar-exito').classList.remove('hidden');
@@ -609,7 +678,8 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     const errorMsg = document.getElementById('login-error-msg');
     try {
-      const res = await fetch('http://localhost:3000/auth/login', {
+      const res = await fetch(`${API_URL}/auth/login`, {
+
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: document.getElementById('login-email').value.trim(), password: document.getElementById('login-password').value })

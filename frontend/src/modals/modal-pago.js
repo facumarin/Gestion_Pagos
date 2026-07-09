@@ -1,8 +1,6 @@
-// src/modals/modal-pago.js
-
 import { registrarPagoCuota } from '../api.js';
+import { MESES } from '../fechas.js';
 
-// Variable de sesión privada de este módulo para recordar el ID en el proceso activo
 let socioSeleccionadoId = '';
 
 export function configurarModalPago(actualizarPantallaCallback) {
@@ -12,8 +10,7 @@ export function configurarModalPago(actualizarPantallaCallback) {
     socioSeleccionadoId = idSocio;
 
     const hoy = new Date();
-    const mesesNombres = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-    const mesNombreActual = mesesNombres[hoy.getMonth()];
+const mesNombreActual = MESES[hoy.getMonth()];
     const anioActual = hoy.getFullYear();
 
     // Rellenamos las etiquetas dinámicas del modal

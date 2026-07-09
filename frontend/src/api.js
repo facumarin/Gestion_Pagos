@@ -1,6 +1,6 @@
 // src/api.js
 
-const API_URL = 'http://localhost:3000';
+import { API_URL } from './config-api.js';
 
 // Centraliza la petición para obtener los datos del semáforo y la tabla
 export async function obtenerDatosDashboard() {

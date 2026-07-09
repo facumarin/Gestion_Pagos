@@ -12,6 +12,12 @@ export function configurarNavegacion() {
 
   // 2. Definimos la función ruteadora interna
   function navegarA(pantallaDestino) {
+    
+ sessionStorage.setItem(
+    'vista-activa',
+    pantallaDestino
+  );
+
     // Ocultamos todas las vistas agregando la clase 'hidden'
     Object.values(vistas).forEach(vista => {
       const el = document.getElementById(vista.id);
@@ -36,6 +42,11 @@ export function configurarNavegacion() {
     }
   }
 
-  // 3. Exponemos la función al objeto global para los botones del menú aside
+const ultimaVista =
+    sessionStorage.getItem('vista-activa')
+    || 'dashboard';
+
+  navegarA(ultimaVista);
+
   window.navegarA = navegarA;
 }

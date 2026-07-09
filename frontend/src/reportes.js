@@ -9,7 +9,12 @@ export function exportarExcelContable(listaSocios) {
 
   // 2. Recorremos los socios e inyectamos sus filas
   listaSocios.forEach(s => {
-    const montoStr = s.estadoSemaforo === 'Verde' ? "0" : "5000";
+    const montoStr =
+  String(
+    s.montoCuota ||
+    s.monto_cuota ||
+    0
+  );
     const estadoTexto = s.estadoSemaforo === 'Verde' ? "Al Dia" : (s.estadoSemaforo === 'Amarillo' ? "Pendiente" : "Vencido");
     
     // Limpiamos comas por seguridad en los nombres
