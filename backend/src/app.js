@@ -133,16 +133,37 @@ app.get('/socios/:id/pagos', async (req, res) => {
     });
   }
 });
+
 app.get('/cuotas/balance', async (req, res) => {
   try {
-    const resultado = await obtenerBalanceCuotasUC.ejecutar();
+
+    const mes =
+      req.query.mes
+        ? parseInt(req.query.mes, 10)
+        : null;
+
+    const anio =
+      req.query.anio
+        ? parseInt(req.query.anio, 10)
+        : null;
+//console.log('BALANCE:', {mes,anio});
+    const resultado =
+      await obtenerBalanceCuotasUC.ejecutar({
+        mes,
+        anio
+      });
+
     res.json(resultado);
+
   } catch (error) {
+
     res.status(500).json({
       error: error.message
     });
+
   }
 });
+
 // 🔒 ENDPOINT: VALIDACIÓN DE CREDENCIALES REALES EN SUPABASE AUTH
 app.post('/auth/login', async (req, res) => {
   const { email, password } = req.body;

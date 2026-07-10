@@ -22,7 +22,28 @@ export class RegistrarSocioCompleto {
 
     const socioCreado =
       await this.registrarSocioUC.ejecutar(datosSocio);
+if (
+  condicionIngreso === 'deuda' &&
+  socioCreado
+) {
 
+  const anioAct =
+    new Date().getFullYear();
+
+ await this.supabase
+  .from('cuotas')
+  .insert([{
+    id_socio: socioCreado.id,
+    mes: altaMesContable || (new Date().getMonth() + 1),
+    anio: anioAct,
+    monto_total:
+      parseFloat(montoCuota || 5000),
+    pagada: false,
+    saldo_pendiente:
+      parseFloat(montoCuota || 5000)
+  }]);
+
+}
     if (
       condicionIngreso === 'pago' &&
       registraPagoInicial &&
