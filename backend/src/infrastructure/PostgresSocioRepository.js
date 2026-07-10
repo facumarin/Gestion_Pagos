@@ -81,30 +81,42 @@ export class PostgresSocioRepository {
     });
   }
 
-  async guardar(socio) {
-    const { data, error } = await supabase
-      .from('socios')
-      .insert([{
-        nombre: socio.nombre,
-        apellido: socio.apellido || null,
-        dni: socio.dni,
-        telefono: socio.telefono,
-        email: socio.email,
-        direccion: socio.direccion,
-        tipo: socio.tipo,
-        id_titular: socio.id_titular || socio.idTitular || null,
-        notas: socio.notas || null,
-        actividad: socio.actividad || null,
-        categoria: socio.categoria || null,
-        monto_cuota: socio.montoCuota || socio.monto_cuota || 5000,
-        fecha_vencimiento: socio.fechaVencimiento || socio.fecha_vencimiento || null,
-        fecha_nacimiento: socio.fechaNacimiento || socio.fecha_nacimiento || null 
-      }])
-      .select();
+ async guardar(socio) {
+  const { data, error } = await supabase
+    .from('socios')
+    .insert([{
+      nombre: socio.nombre,
+      apellido: socio.apellido || null,
+      dni: socio.dni,
+      telefono: socio.telefono,
+      email: socio.email,
+      direccion: socio.direccion,
+      tipo: socio.tipo,
+      id_titular: socio.id_titular || socio.idTitular || null,
+      notas: socio.notas || null,
+      actividad: socio.actividad || null,
+      categoria: socio.categoria || null,
+      monto_cuota: socio.montoCuota || socio.monto_cuota || 5000,
+      fecha_vencimiento:
+        socio.fechaVencimiento ||
+        socio.fecha_vencimiento ||
+        null,
+      fecha_nacimiento:
+        socio.fechaNacimiento ||
+        socio.fecha_nacimiento ||
+        null
+    }])
+    .select()
+    .single();
 
-    if (error) throw new Error(`Error al guardar socio: ${error.message}`);
-    return data;
+  if (error) {
+    throw new Error(
+      `Error al guardar socio: ${error.message}`
+    );
   }
+
+  return data;
+}
 
   async actualizar(id, datosActualizados) {
     const payload = {};
