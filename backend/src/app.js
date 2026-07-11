@@ -137,21 +137,33 @@ app.get('/socios/:id/pagos', async (req, res) => {
 app.get('/cuotas/balance', async (req, res) => {
   try {
 
-    const mes =
-      req.query.mes
-        ? parseInt(req.query.mes, 10)
-        : null;
+ const mesDesde =
+  req.query.mesDesde
+    ? parseInt(req.query.mesDesde, 10)
+    : null;
 
-    const anio =
-      req.query.anio
-        ? parseInt(req.query.anio, 10)
-        : null;
-//console.log('BALANCE:', {mes,anio});
-    const resultado =
-      await obtenerBalanceCuotasUC.ejecutar({
-        mes,
-        anio
-      });
+const mesHasta =
+  req.query.mesHasta
+    ? parseInt(req.query.mesHasta, 10)
+    : null;
+
+const anio =
+  req.query.anio
+    ? parseInt(req.query.anio, 10)
+    : null;
+
+//console.log('BALANCE:', {
+//  mesDesde,
+//  mesHasta,
+//  anio
+//});
+
+const resultado =
+  await obtenerBalanceCuotasUC.ejecutar({
+    mesDesde,
+    mesHasta,
+    anio
+  });
 
     res.json(resultado);
 

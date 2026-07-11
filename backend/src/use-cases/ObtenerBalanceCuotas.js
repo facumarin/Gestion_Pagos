@@ -8,7 +8,11 @@ export class ObtenerBalanceCuotas {
     this.socioRepository = socioRepository;
   }
 
-async ejecutar({mes = null,anio = null} = {}) {
+async ejecutar({
+  mesDesde = null,
+  mesHasta = null,
+  anio = null
+} = {}) {
 
   const socios =
     await this.socioRepository.obtenerTodos() || [];
@@ -26,9 +30,14 @@ let queryCuotas =
       anio
     `);
 
-if (mes !== null) {
+if (
+  mesDesde !== null &&
+  mesHasta !== null
+) {
   queryCuotas =
-    queryCuotas.eq('mes', mes);
+    queryCuotas
+      .gte('mes', mesDesde)
+      .lte('mes', mesHasta);
 }
 
 if (anio !== null) {
@@ -36,18 +45,7 @@ if (anio !== null) {
     queryCuotas.eq('anio', anio);
 }
 
-const {
-  data: cuotas,
-  error: errorCuotas
-} = await queryCuotas;
-
-//console.log('CUOTAS FILTRADAS:', mes, anio, cuotas?.length);
-
-  if (errorCuotas) {
-    throw errorCuotas;
-  }
-
- let queryPagos =
+let queryPagos =
   this.supabase
     .from('pagos')
     .select(`
@@ -61,12 +59,20 @@ const {
       numero_recibo
     `);
 
-if (mes !== null) {
+if (
+  mesDesde !== null &&
+  mesHasta !== null
+) {
   queryPagos =
-    queryPagos.eq(
-      'periodo_mes',
-      mes
-    );
+    queryPagos
+      .gte(
+        'periodo_mes',
+        mesDesde
+      )
+      .lte(
+        'periodo_mes',
+        mesHasta
+      );
 }
 
 if (anio !== null) {
@@ -76,6 +82,17 @@ if (anio !== null) {
       anio
     );
 }
+const {
+  data: cuotas,
+  error: errorCuotas
+} = await queryCuotas;
+
+//console.log('CUOTAS FILTRADAS:', mesDesde, mesHasta, anio, cuotas?.length);
+
+  if (errorCuotas) {
+    throw errorCuotas;
+  }
+
 
 const {
   data: pagos,
@@ -86,7 +103,7 @@ const {
     ascending: false
   }
 );
-//console.log('PAGOS FILTRADOS:', mes, anio, pagos?.length);
+//console.log('PAGOS FILTRADOS:', mesDesde, mesHasta, anio, pagos?.length);
   if (errorPagos) {
     throw errorPagos;
   }
