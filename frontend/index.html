@@ -271,7 +271,7 @@
                     <!-- Selector Desde -->
                     <div class="flex items-center gap-1">
                         <span id="lbl-caja-desde" class="text-[10px] font-bold uppercase text-gray-400 hidden">Desde:</span>
-                      <select  id="select-cuotas-mes-desde" onchange="window.recalcularMetricasCuotasPorMes()"
+                      <select id="select-cuotas-mes-desde" onchange="window.recalcularMetricasCuotasPorMes()"
   class="px-3 py-2 border border-gray-300 rounded-xl text-xs bg-white outline-none focus:ring-2 focus:ring-blue-500 font-sans text-gray-800 font-semibold cursor-pointer shadow-sm">
 </select>
                     </div>
@@ -282,13 +282,19 @@
                         <select  id="select-cuotas-mes-hasta" onchange="window.recalcularMetricasCuotasPorMes()"
   class="px-3 py-2 border border-gray-300 rounded-xl text-xs bg-white outline-none focus:ring-2 focus:ring-blue-500 font-sans text-gray-800 font-semibold cursor-pointer shadow-sm">
 </select>
+
                     </div>
+                    <select
+  id="select-cuotas-anio"
+  onchange="window.recalcularMetricasCuotasPorMes()"
+  class="px-3 py-2 border border-gray-300 rounded-xl text-xs bg-white outline-none focus:ring-2 focus:ring-blue-500 font-sans text-gray-800 font-semibold cursor-pointer shadow-sm">
+</select>
                 </div>
             </div>
         </div>
 
         <!-- TUS TRES TARJETAS ORIGINALES (Siguen intactas abajo) -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <div class="bg-white p-5 rounded-xl shadow border border-gray-100">
                 <p class="text-xs font-bold uppercase tracking-wider text-gray-400">Recaudación Estimada</p>
                 <h4 class="text-2xl font-black text-slate-900 mt-1" id="txt-caja-estimada">$0,00</h4>
@@ -304,6 +310,21 @@
                 <h4 class="text-2xl font-black text-rose-700 mt-1" id="txt-caja-mora">$0,00</h4>
                 <p class="text-xs text-gray-400 mt-1">Capital que falta cobrar.</p>
             </div>
+            <div class="bg-white p-5 rounded-xl shadow border border-gray-100 border-l-4 border-blue-500">
+    <p class="text-xs font-bold uppercase tracking-wider text-blue-600">
+        Cumplimiento
+    </p>
+
+    <h4
+      class="text-2xl font-black text-blue-700 mt-1"
+      id="txt-caja-cumplimiento">
+      0%
+    </h4>
+
+    <p class="text-xs text-gray-400 mt-1">
+      Porcentaje efectivamente cobrado.
+    </p>
+</div>
         </div>
 
         <!-- TU BOX DE EXPORTAR REPORTES (Sigue intacto abajo) -->

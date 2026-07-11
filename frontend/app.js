@@ -81,12 +81,26 @@ async function cargarDashboard() {
   }
 }
 
-async function cargarBalanceCuotas() {
+async function cargarBalanceCuotas(
+  mesDesde = obtenerMesActual(),
+  mesHasta = obtenerMesActual(),
+  anio = new Date().getFullYear()
+) {
   try {
-    const balance = await obtenerBalanceCuotas();
-    document.getElementById('txt-caja-estimada').innerText = `$${balance.proyectado.toLocaleString('es-AR')}`;
-    document.getElementById('txt-caja-real').innerText = `$${balance.cobrado.toLocaleString('es-AR')}`;
-    document.getElementById('txt-caja-mora').innerText = `$${balance.pendiente.toLocaleString('es-AR')}`;
+
+    const balance =
+      await obtenerBalanceCuotas(
+        mesDesde,
+        mesHasta,
+        anio
+      );
+ document.getElementById('txt-caja-estimada').innerText =  `$${balance.proyectado.toLocaleString('es-AR')}`;
+
+document.getElementById('txt-caja-real').innerText =  `$${balance.cobrado.toLocaleString('es-AR')}`;
+
+document.getElementById('txt-caja-mora').innerText =  `$${balance.pendiente.toLocaleString('es-AR')}`;
+
+document.getElementById('txt-caja-cumplimiento').innerText =  `${balance.cumplimiento}%`;
   } catch (error) {
     console.error(
       'Error al cargar balance:',
@@ -496,47 +510,61 @@ window.evaluarEstructuraFiltroRango = function() {
   window.recalcularMetricasCuotasPorMes();
 }
 
-window.recalcularMetricasCuotasPorMes = function() {
-  const checkActivo = document.getElementById('check-habilitar-rango')?.checked || false;
-  const mesDesde = parseInt(
-  document.getElementById('select-cuotas-mes-desde')?.value ||
-  obtenerMesActual(),
-  10
-);
+window.recalcularMetricasCuotasPorMes = async function() {
 
-const mesHasta = checkActivo
-  ? parseInt(
-      document.getElementById('select-cuotas-mes-hasta')?.value ||
+  const checkActivo =
+    document.getElementById(
+      'check-habilitar-rango'
+    )?.checked || false;
+
+  const selectDesde =
+    document.getElementById(
+      'select-cuotas-mes-desde'
+    );
+
+  const selectHasta =
+    document.getElementById(
+      'select-cuotas-mes-hasta'
+    );
+
+  let mesDesde =
+    parseInt(
+      selectDesde?.value ||
       obtenerMesActual(),
       10
-    )
-  : mesDesde;
+    );
 
-  const montoBaseDefault = window.AppConfig?.montoBaseDefault || 0;
+  let mesHasta =
+    checkActivo
+      ? parseInt(
+          selectHasta?.value ||
+          obtenerMesActual(),
+          10
+        )
+      : mesDesde;
 
-  const sociosActivos = todosLosSocios.filter(s => s.estado !== 'Inactivo');
-  let estimadosMonto = 0; let cobradosMonto = 0; let moraMonto = 0;
+  if (checkActivo && mesHasta < mesDesde) {
 
-  sociosActivos.forEach(socio => {
-    const cuotaMonto = parseFloat(socio.montoCuota || socio.monto_cuota || montoBaseDefault);
-    estimadosMonto += cuotaMonto;
-    const fVenc = socio.fechaVencimiento || socio.fecha_vencimiento;
-    if (fVenc) {
-      const mesVencimientoSocio = new Date(fVenc).getUTCMonth() + 1;
-      if (mesVencimientoSocio > mesHasta) cobradosMonto += cuotaMonto;
-      else if (mesVencimientoSocio >= mesDesde && mesVencimientoSocio <= mesHasta) moraMonto += cuotaMonto;
-      else estimadosMonto -= cuotaMonto; 
-    } else {
-      moraMonto += cuotaMonto;
-    }
-  });
+    selectHasta.value = String(mesDesde);
 
-  document.getElementById('txt-caja-estimada').innerText = `$${estimadosMonto.toLocaleString('es-AR')},00`;
-  document.getElementById('txt-caja-real').innerText = `$${cobradosMonto.toLocaleString('es-AR')},00`;
-  document.getElementById('txt-caja-mora').innerText = `$${moraMonto.toLocaleString('es-AR')},00`;
-  
+    mesHasta = mesDesde;
+  }
+
+  const anioSeleccionado =
+    parseInt(
+      document.getElementById(
+        'select-cuotas-anio'
+      )?.value,
+      10
+    );
+
+await cargarBalanceCuotas(
+mesDesde,
+mesHasta,
+anioSeleccionado
+);
   window.renderizarTablaAuditoriaCuotas();
-}
+};
 
 window.filtrarAuditoriaCuotas = function(color) {
   auditoriaColorActivoGlobal = color;
@@ -616,6 +644,39 @@ window.filtrarPorSemaforo = function (color) {
   renderizarTabla(sociosActivos.filter(s => s.estadoSemaforo === color));
 }
 
+function poblarSelectorAnios() {
+  const select =
+    document.getElementById(
+      'select-cuotas-anio'
+    );
+
+  if (!select) return;
+
+  const anioActual =
+    new Date().getFullYear();
+
+  select.innerHTML = '';
+
+  for (
+    let anio = anioActual - 1;
+    anio <= anioActual + 5;
+    anio++
+  ) {
+
+    const option =
+      document.createElement('option');
+
+    option.value = anio;
+    option.textContent = anio;
+
+    if (anio === anioActual) {
+      option.selected = true;
+    }
+
+    select.appendChild(option);
+  }
+}
+
 // --- INITIALIZER CENTRAL READY DOM UNIFICADO ---
 document.addEventListener('DOMContentLoaded', () => {
   aplicarConfiguracionVisual();
@@ -627,8 +688,9 @@ document.addEventListener('DOMContentLoaded', () => {
   poblarSelectorMeses('select-cuotas-mes-desde');
 poblarSelectorMeses('select-cuotas-mes-hasta');
 poblarSelectorMeses('select-caja-mes-filtro');
+poblarSelectorAnios();
   cargarDashboard();
-  cargarBalanceCuotas();
+cargarBalanceCuotas();
 
   document.getElementById('input-buscador')?.addEventListener('input', (e) => {
     const txt = e.target.value.toLowerCase().trim();
