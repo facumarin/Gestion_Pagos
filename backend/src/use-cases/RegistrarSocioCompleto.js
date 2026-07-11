@@ -95,31 +95,39 @@ if (
             .single();
         if (cuota) {
 
+          const { data: infoMedio } =
+  await this.supabase
+    .from('medios_pago')
+    .select('nombre')
+    .eq('id', altaMedioPago)
+    .maybeSingle();
+
+const nombreMedioTexto =  infoMedio? infoMedio.nombre: 'Efectivo';
+
           await this.supabase
             .from('pagos')
             .insert([{
               id_cuota: cuota.id,
               monto_abonado:
                 parseFloat(montoCuota || 5000),
-              forma_pago:
-                altaMedioPago || 'Efectivo',
+              forma_pago:  nombreMedioTexto,
               periodo_mes: altaMesContable,
               periodo_anio: anioAct,
               cobrado_por: 'Administrativo'
             }]);
 
-          await this.supabase
-            .from('caja_movimientos')
-            .insert([{
-              id_categoria: cat.id,
-              id_socio: socioCreado.id,
-              concepto:
-                `Pago Inicial Alta - Período: ${mesesTxt[altaMesContable - 1]} ${anioAct}`,
-              monto:
-                parseFloat(montoCuota || 5000),
-              tipo_pago:
-                altaMedioPago || 'Efectivo'
-            }]);
+        await this.supabase
+  .from('caja_movimientos')
+  .insert([{
+    id_categoria: cat.id,
+    id_socio: socioCreado.id,
+    concepto:
+      `Pago Inicial Alta - Período: ${mesesTxt[altaMesContable - 1]} ${anioAct}`,
+    monto:
+      parseFloat(montoCuota || 5000),
+    tipo_pago:
+      nombreMedioTexto
+  }]);
         }
       }
     }
