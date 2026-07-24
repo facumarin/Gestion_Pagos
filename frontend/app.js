@@ -8,9 +8,10 @@ import { exportarExcelContable, exportarPDFContable } from './src/reportes.js';
 import { obtenerBalanceCuotas } from './src/api-cuotas.js';
 import { API_URL } from './src/config-api.js';
 import { MESES, poblarSelectorMeses,  obtenerMesActual} from './src/fechas.js';
+import { guardarComprobante, mostrarModalComprobante, emitirComprobante} from './src/comprobantes.js';
+import { abrirFichaHistorica, cerrarFichaHistorica} from './src/ficha-historica.js';
 
 let todosLosSocios = [];
-let ultimoComprobante = null;
 
 function aplicarConfiguracionVisual() {
   const cfg = window.AppConfig;
@@ -101,12 +102,75 @@ document.getElementById('txt-caja-real').innerText =  `$${balance.cobrado.toLoca
 document.getElementById('txt-caja-mora').innerText =  `$${balance.pendiente.toLocaleString('es-AR')}`;
 
 document.getElementById('txt-caja-cumplimiento').innerText =  `${balance.cumplimiento}%`;
+
+renderizarPagosCuotas(balance.pagos || []);
+
   } catch (error) {
     console.error(
       'Error al cargar balance:',
       error
     );
   }
+}
+
+function renderizarPagosCuotas(pagos = []) {
+
+  const tbody =
+    document.getElementById(
+      'tabla-auditoria-cuotas-body'
+    );
+
+  if (!tbody) return;
+
+  if (!pagos.length) {
+
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6"
+            class="p-8 text-center text-gray-400">
+          Sin movimientos registrados.
+        </td>
+      </tr>
+    `;
+
+    return;
+  }
+
+  tbody.innerHTML =
+    pagos.map(p => `
+      <tr class="border-b border-gray-100">
+        <td class="p-4">
+          ${new Date(
+            p.fecha_pago
+          ).toLocaleDateString('es-AR')}
+        </td>
+
+        <td class="p-4 font-mono">
+          #${p.numero_recibo || '-'}
+        </td>
+
+        <td class="p-4">
+          ${p.nombreSocio || ''}
+          ${p.apellidoSocio || ''}
+        </td>
+
+        <td class="p-4">
+          ${p.periodo_mes || '-'}
+          /
+          ${p.periodo_anio || '-'}
+        </td>
+
+        <td class="p-4">
+          ${p.forma_pago || '-'}
+        </td>
+
+        <td class="p-4 text-right font-bold">
+          $${Number(
+            p.monto_abonado || 0
+          ).toLocaleString('es-AR')}
+        </td>
+      </tr>
+    `).join('');
 }
 
 function renderizarTabla(listaDeSocios) {
@@ -123,9 +187,8 @@ function renderizarTabla(listaDeSocios) {
     return `
       <tr class="border-b border-gray-100 hover:bg-gray-50/60 transition text-sm">
         <td class="p-4 pl-6">
-          <span onclick="window.verFichaDetalladaSocio('${socio.id}')" class="font-bold text-blue-600 hover:text-blue-800 hover:underline cursor-pointer transition">${socio.nombre} ${socio.apellido || ''}</span>
+      <span class="font-bold text-slate-800"> ${socio.nombre} ${socio.apellido || ''}</span>
         </td>
-        <td class="p-4 text-gray-600">${socio.dni}</td>
         <td class="p-4 text-gray-500"><span class="px-2 py-0.5 bg-gray-100 rounded text-xs font-medium text-gray-600">${socio.tipo}</span></td>
         <td class="p-4 text-center">
           <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${estilo.claseBadge}">
@@ -302,14 +365,65 @@ window.dispararPestañaWhatsApp = function () {
 // --- COBROS ---
 let socioCobroActivo = null;
 let modalidadCobroActual = 'total';
+let montoFinalCobro = 0;
 
-window.abrirModalConfirmarPago = function (idSocio) {
+function recalcularMontoFinalCobro() {
+  if (!socioCobroActivo) return 0;
+  let montoBase =
+    modalidadCobroActual === 'parcial'
+      ? parseFloat(document.getElementById('input-monto-parcial')?.value) || 0
+      : parseFloat(socioCobroActivo.montoCuota || 0 );
+
+  const checkRecargo = document.getElementById('check-recargo-mora');
+  if (
+    checkRecargo?.checked && socioCobroActivo.estadoSemaforo === 'Rojo'
+  ) {
+    const porcentaje = window.AppConfig?.recargoMoraPorcentaje || 0;
+    montoBase +=  montoBase * porcentaje / 100;  
+  }
+  montoFinalCobro = montoBase;
+  return montoFinalCobro;
+}
+
+const porcentajeRecargo = window.AppConfig?.recargoMoraPorcentaje || 0;
+
+const textoRecargo =
+  document.querySelector(
+    '#contenedor-recargo-mora .font-semibold'
+  );
+
+if (textoRecargo) {
+  textoRecargo.innerText =
+    `Aplicar recargo por mora (${porcentajeRecargo}%)`;
+}
+
+window.abrirModalConfirmarPago = function (idSocio) {  
   const socio = todosLosSocios.find(s => s.id === idSocio);
   if (!socio) return;
   socioCobroActivo = socio;
   modalidadCobroActual = 'total';
 let montoPlan = parseFloat(socio.montoCuota || socio.monto_cuota);
+  montoFinalCobro = montoPlan;
+  const inputParcial =
+  document.getElementById(
+    'input-monto-parcial'
+  );
 
+if (inputParcial) {
+
+  inputParcial.oninput = function () {
+
+    const total =
+      recalcularMontoFinalCobro();
+
+    document.getElementById(
+      'pago-monto-txt'
+    ).innerText =
+      `$${total.toLocaleString('es-AR', {
+        minimumFractionDigits: 2
+      })}`;
+  };
+}
 if (isNaN(montoPlan) || montoPlan <= 0) {
   alert(
     'El socio no tiene una cuota válida configurada. Revise la ficha antes de cobrar.'
@@ -317,9 +431,70 @@ if (isNaN(montoPlan) || montoPlan <= 0) {
   return;
 }
   
-  if (window.AppConfig?.modulosActivos?.recargosMora && socio.estadoSemaforo === 'Rojo') {
-    montoPlan += (montoPlan * 5) / 100;
+if (socio.estadoSemaforo === 'Rojo') {
+  document
+    .getElementById('contenedor-recargo-mora')
+    ?.classList.remove('hidden');
+} else {
+  document
+    .getElementById('contenedor-recargo-mora')
+    ?.classList.add('hidden');
+}
+const checkRecargo =
+  document.getElementById('check-recargo-mora');
+//console.log('check encontrado:', checkRecargo);
+if (checkRecargo) {
+  checkRecargo.checked = false;
+
+checkRecargo.onchange = function () {
+
+  const total =
+    recalcularMontoFinalCobro();
+
+ if (!checkRecargo.checked) {
+
+  document.getElementById(
+    'lbl-recargo-monto'
+  ).innerText = '$0,00';
+
+  document.getElementById(
+    'lbl-recargo-total'
+  ).innerText =
+    `$${total.toLocaleString('es-AR', {
+      minimumFractionDigits: 2
+    })}`;
+} else {
+
+    const porcentaje =
+      window.AppConfig?.recargoMoraPorcentaje || 0;
+
+    const recargo =
+      montoPlan * porcentaje / 100;
+
+    document.getElementById(
+      'lbl-recargo-monto'
+    ).innerText =
+      `$${recargo.toLocaleString('es-AR', {
+        minimumFractionDigits: 2
+      })}`;
+
+    document.getElementById(
+      'lbl-recargo-total'
+    ).innerText =
+      `$${total.toLocaleString('es-AR', {
+        minimumFractionDigits: 2
+      })}`;
   }
+
+  document.getElementById(
+    'pago-monto-txt'
+  ).innerText =
+    `$${total.toLocaleString('es-AR', {
+      minimumFractionDigits: 2
+    })}`;
+};
+}
+ 
   const fechaRef = socio.fechaVencimiento || socio.fecha_vencimiento;
   let dateObj = new Date();
   if (fechaRef) dateObj = new Date(typeof fechaRef === 'string' ? fechaRef.split('T')[0].replace(/-/g, '/') : fechaRef);
@@ -344,9 +519,16 @@ window.cerrarModalConfirmarPago = function () {
 window.seleccionarTipoCobro = function (modalidad) {
   modalidadCobroActual = modalidad;
   actualizarDisenoBotonesCobro();
-  if (modalidad === 'parcial') document.getElementById('contenedor-monto-parcial').classList.remove('hidden');
-  else document.getElementById('contenedor-monto-parcial').classList.add('hidden');
-}
+  if (modalidad === 'parcial') {
+    document.getElementById('contenedor-monto-parcial').classList.remove('hidden');
+  } else {
+    document.getElementById('contenedor-monto-parcial').classList.add('hidden');
+  }
+
+  const total = recalcularMontoFinalCobro();
+
+  document.getElementById('pago-monto-txt').innerText = `$${total.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
+};
 
 function actualizarDisenoBotonesCobro() {
   const btnTotal = document.getElementById('btn-pago-total');
@@ -359,20 +541,18 @@ function actualizarDisenoBotonesCobro() {
     btnParcial.className = "p-3 border-2 border-amber-500 rounded-xl bg-amber-50/50 cursor-pointer text-center";
   }
 }
-// frontend/app.js (Procesamiento de Cobros, Ticket y Ficha) - PARTE 4-B
 
 window.procesarCobroDefinitivo = async function () {
   if (!socioCobroActivo) return;
   const notas = document.getElementById('txt-pago-notas').value.trim();
   const medio = document.getElementById('select-pago-medio').value;
-  let montoACobrar = parseFloat(socioCobroActivo.montoCuota || 0);
-  if (modalidadCobroActual === 'parcial') montoACobrar = parseFloat(document.getElementById('input-monto-parcial').value) || 0;
-  
+recalcularMontoFinalCobro();
+
   try {
     const res = await fetch(`${API_URL}/socios/${socioCobroActivo.id}/cobrar`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ monto: montoACobrar, medioPago: medio, notas, tipoVencimiento: 'calendario' })
+      body: JSON.stringify({ monto: montoFinalCobro, medioPago: medio, notas, tipoVencimiento: 'calendario' })
     });
     const respuestaAPI = await res.json();
 
@@ -382,13 +562,23 @@ if (!res.ok) {
   );
 }
 
-ultimoComprobante = {
-  numeroRecibo: respuestaAPI.numeroRecibo,
-  periodo: `${respuestaAPI.mesLiquidado} ${respuestaAPI.anioLiquidado}`
-};   
+guardarComprobante({
+  numeroRecibo:respuestaAPI.numeroRecibo,
+  periodo:`${respuestaAPI.mesLiquidado} ${respuestaAPI.anioLiquidado}`,
+  nombreCompleto:`${socioCobroActivo.nombre} ${socioCobroActivo.apellido || ''}`,
+  dni:socioCobroActivo.dni,
+  tipo:socioCobroActivo.tipo,
+  medio: document.getElementById('select-pago-medio').options[
+      document.getElementById(
+        'select-pago-medio'
+      ).selectedIndex
+    ]?.text || 'Efectivo',
+  monto: montoFinalCobro
+});
+
     document.getElementById('modal-confirmar-pago').classList.add('hidden');
     document.getElementById('lbl-pagoexito-nombre').innerText = `${socioCobroActivo.nombre} ${socioCobroActivo.apellido || ''}`;
-    document.getElementById('lbl-pagoexito-monto').innerText = `$${montoACobrar.toLocaleString('es-AR', {minimumFractionDigits: 2})}`;
+    document.getElementById('lbl-pagoexito-monto').innerText = `$${montoFinalCobro.toLocaleString('es-AR', {minimumFractionDigits: 2})}`;
     document.getElementById('lbl-pagoexito-tipo').innerHTML = `${modalidadCobroActual === 'total' ? 'Pago Total' : 'Pago Parcial'} <br><span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Período: ${respuestaAPI.mesLiquidado || ''} ${respuestaAPI.anioLiquidado || ''}</span>`;
     document.getElementById('modal-pago-exito').classList.remove('hidden');
     await cargarDashboard();
@@ -397,31 +587,79 @@ ultimoComprobante = {
   }
 }
 
-window.emitirComprobanteImpreso = function() {
-  if (!socioCobroActivo) return;
-  const cfg = window.AppConfig || { nombre: "Institución", subtitulo: "Gestión", terminos: { cuotaConcepto: "Cuota" } };
-  const medio = document.getElementById('select-pago-medio').options[document.getElementById('select-pago-medio').selectedIndex]?.text || 'Efectivo';
-  let montoAbonado = parseFloat(socioCobroActivo.montoCuota || 0);
-  if (modalidadCobroActual === 'parcial') montoAbonado = parseFloat(document.getElementById('input-monto-parcial').value) || 0;
-  
-  // Sincronización Marca Blanca Nativa
-  document.getElementById('recibo-nombre-institucion').innerText = cfg.nombre;
-  document.getElementById('recibo-subtitulo-institucion').innerText = cfg.subtitulo;
-  const logo =  document.getElementById('recibo-logo-img');
-if (logo) {
-  logo.src = cfg.escudoUrl;
-}
-document.getElementById('recibo-num-txt').innerText = ultimoComprobante?.numeroRecibo? `#${ultimoComprobante.numeroRecibo}` : '#----';
-  document.getElementById('recibo-fecha-txt').innerText = `Fecha: ${new Date().toLocaleDateString('es-AR')}`;
-  document.getElementById('recibo-socio-nombre').innerText = `${socioCobroActivo.nombre} ${socioCobroActivo.apellido || ''}`.trim();
-  document.getElementById('recibo-socio-dni').innerText = `DNI: ${socioCobroActivo.dni}`;
-  document.getElementById('recibo-socio-plan').innerText = `Arancel: ${socioCobroActivo.tipo || 'Cuota Social'}`;
-  document.getElementById('recibo-socio-periodo').innerText = ultimoComprobante?.periodo || 'Período saldado';
-  document.getElementById('recibo-tabla-concepto').innerText = `${cfg.nombre} - ${cfg.terminos.cuotaConcepto}`;
-  document.getElementById('recibo-tabla-medio').innerText = medio;
-  document.getElementById('recibo-tabla-monto').innerText = `$${montoAbonado.toLocaleString('es-AR', {minimumFractionDigits: 2})}`;
-  window.print();
-}
+window.emitirComprobanteImpreso = emitirComprobante;
+
+window.reimprimirComprobanteHistorico =
+  function (
+    numeroRecibo,
+    periodo,
+    nombreCompleto,
+    dni,
+    tipo,
+    medio,
+    monto
+  ) {
+
+    emitirComprobante({
+      numeroRecibo,
+      periodo,
+      nombreCompleto,
+      dni,
+      tipo,
+      medio,
+      monto
+    });
+
+  };
+
+window.anularComprobante = async function(idPago) {
+
+  const confirmar =
+    confirm(
+      '¿Desea anular este comprobante?'
+    );
+
+  if (!confirmar) return;
+
+  try {
+
+    const res =
+      await fetch(
+        `${API_URL}/pagos/${idPago}/anular`,
+        {
+          method: 'POST'
+        }
+      );
+
+    const data =
+      await res.json();
+
+    if (!res.ok) {
+      throw new Error(
+        data.error || 'Error'
+      );
+    }
+
+    alert(
+      '✅ Comprobante anulado correctamente.'
+    );
+
+    cargarDashboard();
+document
+  .getElementById(
+    'modal-ficha-historica'
+  )
+  .classList.add('hidden');
+  } catch (error) {
+
+    alert(
+      error.message ||
+      'No se pudo anular.'
+    );
+
+  }
+
+};
 
 async function inicializarMediosDePagoPantalla() {
   try {
@@ -439,60 +677,16 @@ async function inicializarMediosDePagoPantalla() {
   }
 }
 
-window.verFichaDetalladaSocio = async function(idSocio) {
-  const socio = todosLosSocios.find(s => s.id === idSocio);
-  if (!socio) return;
-  document.getElementById('ficha-avatar-txt').innerText = String(socio.nombre).substring(0, 2).toUpperCase();
-  document.getElementById('ficha-nombre-completo').innerText = `${socio.nombre} ${socio.apellido || ''}`.trim();
-  document.getElementById('ficha-dni').innerText = socio.dni;
-  document.getElementById('ficha-telefono').innerText = socio.telefono || 'Sin teléfono';
-  document.getElementById('ficha-email').innerText = socio.email || 'Sin correo electrónico';
-  document.getElementById('ficha-actividad').innerText = `${socio.actividad || 'General'} / ${socio.categoria || 'Socio'}`;
-  document.getElementById('ficha-monto').innerText = `$${parseFloat(socio.montoCuota || 0).toLocaleString('es-AR', {minimumFractionDigits: 2})}`;
-  const vencimientoTxt = socio.fechaVencimiento || socio.fecha_vencimiento;
-  document.getElementById('ficha-vencimiento').innerText = vencimientoTxt ? vencimientoTxt.split('T')[0] : 'Sin fecha';
-  
-  const badgeEstado = document.getElementById('ficha-estado-badge');
-  if (badgeEstado) {
-    badgeEstado.innerText = socio.leyendaSemaforo || socio.estadoSemaforo;
-    const clasesSemaforo = { 'Verde': 'bg-emerald-50 text-emerald-700 border-emerald-200', 'Amarillo': 'bg-amber-50 text-amber-700 border-amber-200', 'Rojo': 'bg-rose-50 text-rose-700 border-rose-200', 'Gris': 'bg-slate-50 text-slate-600 border-slate-200' };
-    badgeEstado.className = `inline-block text-[10px] font-bold uppercase px-2 py-0.5 rounded-full mt-1 border ${clasesSemaforo[socio.estadoSemaforo] || 'bg-gray-50'}`;
-  }
-  const tablaPagosBody = document.getElementById('ficha-tabla-pagos-body');
-  if (tablaPagosBody) tablaPagosBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-400">Buscando recibos...</td></tr>`;
-  try {
-  const res = await fetch(`${API_URL}/socios/${idSocio}/pagos`);
-    const pagosHistoricos = await res.json();
-    if (!pagosHistoricos || pagosHistoricos.length === 0) {
-      tablaPagosBody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-gray-400">Sin comprobantes emitidos.</td></tr>`;
-    } else {
-      
-      tablaPagosBody.innerHTML = pagosHistoricos.map(p => {
-        const fechaPagoObj = new Date(p.fecha_pago || p.created_at);
-        return `
-          <tr class="hover:bg-slate-50/80 transition text-gray-600">
-            <td class="p-3 pl-4 font-medium text-gray-400">${fechaPagoObj.toLocaleDateString('es-AR')}</td>
-            <td class="p-3 text-center font-mono font-bold text-blue-600">#${String(p.numero_recibo || '-').padStart(4, '0')}</td>
-            <td class="p-3 text-center font-semibold uppercase text-slate-700"><span class="px-1.5 py-0.5 bg-slate-100 rounded text-[10px]">${p.periodo_mes
-  ? MESES[
-      parseInt(p.periodo_mes, 10) - 1
-    ].substring(0, 3)
-  : '-'} ${p.periodo_anio || ''}</span></td>
-            <td class="p-3 text-center font-medium text-gray-500">${p.forma_pago || 'Efectivo'}</td>
-            <td class="p-3 text-right pr-4 font-mono font-black text-emerald-600">$${parseFloat(p.monto_abonado || 0).toLocaleString('es-AR', {minimumFractionDigits: 2})}</td>
-          </tr>`;
-      }).join('');
-    }
-  } catch (err) {
-    if (tablaPagosBody) tablaPagosBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-rose-500 font-semibold">⚠️ Error de red.</td></tr>`;
-  }
-  document.getElementById('modal-ficha-historica').classList.remove('hidden');
-}
+window.verFichaDetalladaSocio =  (idSocio) =>
+    abrirFichaHistorica(
+      idSocio,
+      todosLosSocios,
+      API_URL,
+      MESES
+    );
 
-window.cerrarFichaHistoricaSocio = function() {
-  document.getElementById('modal-ficha-historica').classList.add('hidden');
-}
-// frontend/app.js (Motor de Rangos Desde/Hasta y Cierre del Archivo) - PARTE 4-C
+window.cerrarFichaHistoricaSocio =  cerrarFichaHistorica;
+
 
 let auditoriaColorActivoGlobal = 'Todos';
 

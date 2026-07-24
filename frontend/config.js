@@ -1,41 +1,46 @@
-// ==========================================
+// ==============================================================
 // ⚙️ CONFIGURACIÓN DINÁMICA DE LA INSTITUCIÓN (MARCA BLANCA)
-// ==========================================
+// ==============================================================
 
 // frontend/config.js
 const CONFIG_INSTITUCION = {
   nombre: "Villa Ansaldi",
   subtitulo: "Club Atlético",
-  
-  escudoUrl: "ClubVA.png", // Ruta absoluta al escudo del club o la institución (puede ser local o URL externa)
-  
+  escudoUrl: "ClubVA.png", 
   emojiDefecto: "⚽",
-  terminos: {
+  version: "v1.0.0 - SaaS Online", // <- Agregamos la versión aquí
+
+  //Porcentaje de recargo por mora (5% por defecto)
+  recargoMoraPorcentaje: 5,
+  //activar o desactivar el recargo por mora (true/false)
+  modulosActivos: {
+    recargosMora: true
+  },
+
+terminos: {
     singular: "Socio", 
     plural: "Socios", 
     nuevoEntidad: "Nuevo Socio",
     padronEntidad: "Padrón de Socios",
     gestionEntidad: "Gestión de Socios",
     cuotaConcepto: "Cuota Social",
-    // 🔌 SOLUCIÓN: Definimos cuál es el texto exacto que representa al jefe de cuenta
-    rolPrincipal: "Titular" // Si mañana cambia a "Afiliado Principal", solo se edita acá
+    rolPrincipal: "Titular" 
   },
 
-  // 🎛️ Interruptores de Módulos Activos (SaaS Multirubro)
-  modulosActivos: {
-    caja: true,        // true = Visible / false = Oculto
-    calendario: true,
-    recargosMora: true,
-    whatsapp: true,
-    eventos: true,
-    perfiles: false,     // Módulo de gestión de perfiles de usuario (Administradores, Cobradores, etc.)
-  },
+  // 🎛️ Registro Maestro de Módulos (UI + Interruptores unificados)
+  // Al mover esto aquí, eliminamos por completo el hardcodeo del componente visual.
+  modulos: [
+    { id: 'dashboard', texto: 'Dashboard', icono: 'fas fa-chart-pie', color: 'text-blue-400', activo: true },
+    { id: 'socios', texto: 'Socios', icono: 'fas fa-users', color: 'text-emerald-400', activo: true, usaTerminoPlural: true },
+    { id: 'cuotas', texto: 'Cuotas', icono: 'fas fa-receipt', color: 'text-amber-400', activo: true },
+    { id: 'caja', texto: 'Caja y Contabilidad', icono: 'fas fa-cash-register', color: 'text-cyan-400', activo: true },
+    { id: 'calendario', texto: 'Calendario', icono: 'fas fa-calendar-alt', color: 'text-indigo-400', activo: true },
+    { id: 'eventos', texto: 'Eventos', icono: 'fas fa-trophy', color: 'text-orange-400', activo: false },
+    { id: 'perfiles', texto: 'Perfiles y Permisos', icono: 'fas fa-user-shield', color: 'text-purple-400', activo: false }
+  ],
 
-    // 📋 Lista de Planes / Servicios oficiales de la institución
   planesDisponibles: ["Individual", "Titular", "Adherente", "Fútbol Infantil", "Gimnasio"],
-
   montoBaseDefault: 5000.00,
-
 };
 
 window.AppConfig = CONFIG_INSTITUCION;

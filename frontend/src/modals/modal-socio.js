@@ -1,6 +1,7 @@
-// frontend/src/modals/modal-socio.js (Sincronizado Comercial Definitivo)
+// frontend/src/modals/modal-socio.js
 import { API_URL } from '../config-api.js';
 import { poblarSelectorMeses } from '../fechas.js';
+import { guardarComprobante, mostrarModalComprobante} from '../comprobantes.js';
 
 export function configurarModalSocio(obtenerSociosFn, recargarDashboardFn) {
   const form = document.getElementById('form-nuevo-socio');
@@ -8,36 +9,58 @@ export function configurarModalSocio(obtenerSociosFn, recargarDashboardFn) {
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
+const submitBtn =  form.querySelector('button[type="submit"]' );
 
-    const tipoRegla = document.getElementById('form-alta-tipo-regla').value;
+if (submitBtn) {submitBtn.disabled = true;}
+
+        const tipoRegla = document.getElementById('form-alta-tipo-regla').value;
     const condicionAlta = document.getElementById('form-alta-condicion').value;
-    const hoy = new Date();
-    const anioActual = hoy.getFullYear(); 
     
-    let mesSeleccionado = hoy.getMonth() + 1;
+    const hoy = new Date();
+    const anioActual = hoy.getFullYear();
+    const mesActualJS = hoy.getMonth(); 
+    
+    let mesSeleccionado = mesActualJS + 1; // 1 - 12 para el backend
     let medioSeleccionado = null;
     let registraPagoInicial = false;
     let fechaFinalTexto = null; 
 
+    // Función segura para formatear YYYY-MM-DD sin desvíos por zona horaria (UTC)
+    const formatearFechaLocal = (fechaObj) => {
+      const yyyy = fechaObj.getFullYear();
+      const mm = String(fechaObj.getMonth() + 1).padStart(2, '0');
+      const dd = String(fechaObj.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    };
+
     if (condicionAlta === 'pago') {
       registraPagoInicial = true;
-      mesSeleccionado = parseInt(document.getElementById('form-alta-periodo').value, 10);
+      mesSeleccionado = parseInt(document.getElementById('form-alta-periodo').value, 10); // Ej: 7 para Julio
       medioSeleccionado = document.getElementById('form-alta-medio').value;
       
       if (tipoRegla === 'calendario') {
-        const proximoMes = new Date(anioActual, mesSeleccionado, 10);
-        fechaFinalTexto = proximoMes.toISOString().split('T')[0];
+            fechaFinalTexto = formatearFechaLocal(new Date(anioActual, mesSeleccionado, 10));
       } else {
-        hoy.setMonth(hoy.getMonth() + 1);
-        fechaFinalTexto = hoy.toISOString().split('T')[0];
+        // Aniversario con pago: suma exactamente 1 mes a la fecha de hoy de forma segura
+        const fechaVencimiento = new Date(hoy.getFullYear(), mesActualJS + 1, hoy.getDate());
+        fechaFinalTexto = formatearFechaLocal(fechaVencimiento);
       }
+
     } else if (condicionAlta === 'prueba') {
-      const proximoMesPrueba = new Date(anioActual, hoy.getMonth() + 1, 10);
-      fechaFinalTexto = proximoMesPrueba.toISOString().split('T')[0];
-    } else {
-      // 🎯 TU REGLA DE ORO: Si ingresa con Deuda Pendiente, viaja estrictamente vacía (NULL)
-      fechaFinalTexto = null;
+      // Regla de prueba estándar: vence el día 10 del mes siguiente
+      fechaFinalTexto = formatearFechaLocal(new Date(anioActual, mesActualJS + 1, 10));
+
+    } else { // 🟡 Ingresa con deuda
+      if (tipoRegla === 'calendario') {
+        // Vence el día 10 del mes actual en curso
+        fechaFinalTexto = formatearFechaLocal(new Date(anioActual, mesActualJS, 10));
+      } else {
+        // Aniversario con deuda: tiene exactamente 7 días corridos de gracia
+      const fechaGracia = new Date(hoy);fechaGracia.setDate(fechaGracia.getDate() + 7);
+        fechaFinalTexto = formatearFechaLocal(fechaGracia);
+      }
     }
+
 
     const nuevoSocio = {
       nombre: document.getElementById('form-nombre').value.trim(),
@@ -81,16 +104,66 @@ export function configurarModalSocio(obtenerSociosFn, recargarDashboardFn) {
   if (!res.ok) {
     throw new Error(data.error || 'Error al guardar.');
   }
+if (data.pagoInicial) {
 
+  guardarComprobante({
+    numeroRecibo: data.numeroRecibo,
+    periodo: `${data.mesLiquidado} ${data.anioLiquidado}`,
+    nombreCompleto: `${data.nombre} ${data.apellido || ''}`,
+    dni: data.dni,
+    tipo: data.tipo,
+    medio: data.formaPago,
+    monto: data.montoAbonado
+  });
+
+}
       window.cerrarModalSocio();
       document.getElementById('lbl-exito-nombre').innerText = `${data.nombre} ${data.apellido || ''}`.trim();
       document.getElementById('lbl-exito-dni').innerText = data.dni;
       document.getElementById('lbl-exito-plan').innerText = data.tipo;
-      document.getElementById('modal-exito-socio').classList.remove('hidden');
+    
+if (data.pagoInicial) {
+document.getElementById(
+  'lbl-pagoexito-nombre'
+).innerText =
+  `${data.nombre} ${data.apellido || ''}`;
+
+document.getElementById(
+  'lbl-pagoexito-monto'
+).innerText =
+  `$${Number(
+    data.montoAbonado || 0
+  ).toLocaleString('es-AR', {
+    minimumFractionDigits: 2
+  })}`;
+
+document.getElementById(
+  'lbl-pagoexito-tipo'
+).innerHTML =
+  `Pago Inicial<br>
+   <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">
+     Período: ${data.mesLiquidado} ${data.anioLiquidado}
+   </span>`;
+  mostrarModalComprobante();
+
+} else {
+
+  document
+    .getElementById('modal-exito-socio')
+    .classList.remove('hidden');
+
+}
+
       await recargarDashboardFn();
-    } catch (error) {
-      alert(`⚠️ Error: ${error.message}`);
-    }
+     } catch (error) {
+  alert(`⚠️ Error: ${error.message}`);
+} finally {
+
+  if (submitBtn) {
+    submitBtn.disabled = false;
+  }
+
+}
   });
 }
 

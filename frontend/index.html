@@ -48,50 +48,37 @@
     <!-- CONTENEDOR PRINCIPAL -->
     <div class="min-h-screen flex flex-col md:flex-row relative"> 
         
-        <!-- BARRA LATERAL (MENU MARCA BLANCA) -->
-        <aside class="w-full md:w-64 bg-slate-900 text-white p-6 flex flex-col justify-between shrink-0"> 
-            <div> 
-                <div class="flex flex-col items-center text-center mb-8 pb-4 border-b border-slate-800 w-full">
-                    <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-md overflow-hidden mb-3 border-2 border-blue-500">
-                        <img id="app-escudo-img" src="" alt="Logo Institución" class="w-full h-full object-cover">
-                    </div>
-                    <h1 id="app-nombre-entidad" class="text-xl font-bold tracking-wider text-white">-</h1>
-                    <span id="app-subtitulo-entidad" class="text-xs text-blue-400 font-semibold uppercase tracking-widest mt-0.5">-</span>
-                </div>
-        <nav class="space-y-3"> 
+     <!-- BARRA SUPERIOR (SOLO MÓVIL) -->
+<div class="md:hidden bg-slate-900 text-white p-4 flex items-center justify-between border-b border-slate-800">
+    <div class="flex items-center gap-2">
+        <div class="w-8 h-8 bg-white rounded-full flex items-center justify-center overflow-hidden border border-blue-500 shrink-0">
+            <img id="app-escudo-img-movil" src="" alt="Logo" class="w-full h-full object-cover">
+        </div>
+        <span id="app-nombre-entidad-movil" class="font-bold text-sm">-</span>
+    </div>
+    <button onclick="SidebarController.toggle()" class="text-white p-2 rounded-lg bg-slate-800 cursor-pointer">
+        <i id="btn-hamburguesa-icono" class="fas fa-bars"></i>
+    </button>
+</div>
 
-    <!-- Dashboard -->
-    <a href="#" onclick="navegarA('dashboard')" class="flex items-center gap-3 py-2 px-4 hover:bg-slate-800 rounded-md font-medium text-gray-200 transition group">
-        <!-- Icono Azul -->
-        <i class="fas fa-chart-pie w-5 text-center text-blue-400 group-hover:text-blue-300 transition"></i>
-        <span>Dashboard</span>
-    </a> 
+<!-- BARRA LATERAL COMPLETA -->
+<aside id="sidebar-container" class="hidden md:flex w-full md:w-64 bg-slate-900 text-white p-6 flex-col justify-between shrink-0 fixed md:relative inset-x-0 top-[57px] md:top-0 h-[calc(100vh-57px)] md:h-auto z-50 overflow-y-auto"> 
+    <div> 
+        <!-- Encabezado de la Institución (Escritorio) -->
+        <div class="hidden md:flex flex-col items-center text-center mb-8 pb-4 border-b border-slate-800 w-full">
+            <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-md overflow-hidden mb-3 border-2 border-blue-500">
+                <img id="app-escudo-img" src="" alt="Logo Institución" class="w-full h-full object-cover">
+            </div>
+            <h1 id="app-nombre-entidad" class="text-xl font-bold tracking-wider text-white">-</h1>
+            <span id="app-subtitulo-entidad" class="text-xs text-blue-400 font-semibold uppercase tracking-widest mt-0.5">-</span>
+        </div>
 
-    <!-- Socios -->
-    <a href="#" onclick="navegarA('socios')" class="flex items-center gap-3 py-2 px-4 hover:bg-slate-800 rounded-md text-gray-200 transition group">
-        <!-- Icono Verde (como el escudo de la institución) -->
-        <i class="fas fa-users w-5 text-center text-emerald-400 group-hover:text-emerald-300 transition"></i>
-        <span id="menu-txt-plural">Socios</span>
-    </a> 
-
-    <!-- Cuotas -->
-    <a href="#" onclick="navegarA('cuotas')" class="flex items-center gap-3 py-2 px-4 hover:bg-slate-800 rounded-md text-gray-200 transition group">
-        <!-- Icono Amarillo/Ámbar -->
-        <i class="fas fa-receipt w-5 text-center text-amber-400 group-hover:text-amber-300 transition"></i>
-        <span>Cuotas</span>
-    </a> 
-
-    <!-- Caja y Contabilidad -->
-    <a href="#" onclick="navegarA('caja')" class="flex items-center gap-3 py-2 px-4 hover:bg-slate-800 rounded-md text-gray-200 transition group">
-        <!-- Icono Cyan/Celeste -->
-        <i class="fas fa-cash-register w-5 text-center text-cyan-400 group-hover:text-cyan-300 transition"></i>
-        <span>Caja y Contabilidad</span>
-    </a>
-</nav>
-
-            </div> 
-            <div class="text-xs text-gray-500 mt-6">v1.0.0 - SaaS Online</div> 
-        </aside>
+        <!-- CONTENEDOR DINÁMICO DE MÓDULOS -->
+        <nav id="modulos-navegacion" class="space-y-3"></nav>
+    </div> 
+    
+    <div id="app-version-footer" class="hidden md:block text-xs text-gray-500 mt-6">-</div> 
+</aside>
 
         <!-- VISTA DE CONTENIDO PRINCIPAL -->
         <main class="flex-1 p-6 md:p-10 relative">
@@ -192,18 +179,13 @@
             <div class="relative w-full max-w-md">
                 <input type="text" id="input-buscador" placeholder="Buscar socio por Nombre o DNI..." class="w-full pl-4 pr-4 py-2 border border-gray-300 rounded-lg bg-white">
             </div>
-            <div class="flex gap-3">
-                <button onclick="abrirModalSocio()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-xl shadow-md transition flex items-center gap-2 cursor-pointer">
-                    <span id="btn-txt-nuevo">+ Nuevo Socio</span>
-                </button>
-            </div>
+       
         </div>
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
                 <thead>
                     <tr class="bg-gray-100 text-xs font-semibold uppercase text-gray-600 border-b border-gray-200">
-                        <th id="th-dashboard-entidad" class="p-4 text-left">Socio / Nombre</th>
-                        <th class="p-4">DNI</th>
+                        <th id="th-dashboard-entidad" class="p-4 text-left">Socio / Nombre</th>                        
                         <th class="p-4">Tipo Plan</th>
                         <th class="p-4 text-center">Estado Semáforo</th>
                         <th class="p-4 text-right">Acciones</th>
@@ -221,12 +203,33 @@
 <!-- 👥 PANTALLA 2: SOCIOS (Padrón Oficial Administrativo)     -->
 <!-- ======================================================= -->
 <section id="vista-socios" class="hidden bg-white rounded-xl shadow border border-gray-200 overflow-hidden">
-    <div class="p-5 border-b border-gray-200 bg-gray-50 flex items-center justify-between gap-4 flex-wrap">
-        <div class="relative w-full max-w-md">
-            <input type="text" id="input-buscador-padron" placeholder="Filtrar padrón por nombre o DNI..." class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm outline-none focus:ring-2 focus:ring-blue-500">
-        </div>
-        <span class="text-xs font-bold uppercase tracking-wider text-slate-400 bg-slate-100 px-3 py-1.5 rounded-lg border">Padrón General</span>
+<div class="p-5 border-b border-gray-200 bg-gray-50 flex items-center justify-between gap-4 flex-wrap">
+
+    <div class="relative w-full max-w-md">
+        <input
+            type="text"
+            id="input-buscador-padron"
+            placeholder="Filtrar padrón por nombre o DNI..."
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm outline-none focus:ring-2 focus:ring-blue-500"
+        >
     </div>
+
+    <div class="flex items-center gap-3">
+        <span class="text-xs font-bold uppercase tracking-wider text-slate-400 bg-slate-100 px-3 py-1.5 rounded-lg border">
+            Padrón General
+        </span>
+
+        <button
+            onclick="abrirModalSocio()"
+            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-xl shadow-md transition flex items-center gap-2 cursor-pointer"
+        >
+            <span id="btn-txt-nuevo">
+                + Nuevo Socio
+            </span>
+        </button>
+    </div>
+
+</div>
 
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
@@ -292,42 +295,69 @@
                 </div>
             </div>
         </div>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"> 
+ 
+            <!-- Bloque de cuatro tarjetas Pantalla Cuotas -->
+  <div class="bg-white p-5 rounded-xl shadow border-y border-r  border-l-4 border-black-500"> 
+    <p class="text-xs font-bold tracking-wider text-gray-400">Recaudación Estimada</p> 
+    <h4 class="text-2xl font-black text-slate-900 mt-1" id="txt-caja-estimada">$0,00</h4> 
+    <p class="text-xs text-gray-400 mt-1">Total si todos pagan este mes.</p> 
+  </div> 
+ 
+  <div class="bg-white p-5 rounded-xl shadow border-y border-r  border-l-4 border-emerald-500"> 
+    <p class="text-xs font-bold tracking-wider text-emerald-600">Caja Real Cobrada</p> 
+    <h4 class="text-2xl font-black text-emerald-700 mt-1" id="txt-caja-real">$0,00</h4> 
+    <p class="text-xs text-gray-400 mt-1">Dinero efectivamente ingresado.</p> 
+  </div> 
+ 
+  <div class="bg-white p-5 rounded-xl shadow border-y border-r  border-l-4 border-rose-500"> 
+    <p class="text-xs font-bold tracking-wider text-rose-600">Total Adeudado (Mora)</p> 
+    <h4 class="text-2xl font-black text-rose-700 mt-1" id="txt-caja-mora">$0,00</h4> 
+    <p class="text-xs text-gray-400 mt-1">Capital que falta cobrar.</p> 
+  </div> 
 
-        <!-- TUS TRES TARJETAS ORIGINALES (Siguen intactas abajo) -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div class="bg-white p-5 rounded-xl shadow border border-gray-100">
-                <p class="text-xs font-bold uppercase tracking-wider text-gray-400">Recaudación Estimada</p>
-                <h4 class="text-2xl font-black text-slate-900 mt-1" id="txt-caja-estimada">$0,00</h4>
-                <p class="text-xs text-gray-400 mt-1">Total si todos pagan este mes.</p>
-            </div>
-            <div class="bg-white p-5 rounded-xl shadow border border-gray-100 border-l-4 border-emerald-500">
-                <p class="text-xs font-bold uppercase tracking-wider text-emerald-600">Caja Real Cobrada</p>
-                <h4 class="text-2xl font-black text-emerald-700 mt-1" id="txt-caja-real">$0,00</h4>
-                <p class="text-xs text-gray-400 mt-1">Dinero efectivamente ingresado.</p>
-            </div>
-            <div class="bg-white p-5 rounded-xl shadow border border-gray-100 border-l-4 border-rose-500">
-                <p class="text-xs font-bold uppercase tracking-wider text-rose-600">Total Adeudado (Mora)</p>
-                <h4 class="text-2xl font-black text-rose-700 mt-1" id="txt-caja-mora">$0,00</h4>
-                <p class="text-xs text-gray-400 mt-1">Capital que falta cobrar.</p>
-            </div>
-            <div class="bg-white p-5 rounded-xl shadow border border-gray-100 border-l-4 border-blue-500">
-    <p class="text-xs font-bold uppercase tracking-wider text-blue-600">
-        Cumplimiento
-    </p>
-
-    <h4
-      class="text-2xl font-black text-blue-700 mt-1"
-      id="txt-caja-cumplimiento">
-      0%
-    </h4>
-
-    <p class="text-xs text-gray-400 mt-1">
-      Porcentaje efectivamente cobrado.
-    </p>
+  <div class="bg-white p-5 rounded-xl shadow border-y border-r  border-l-4 border-blue-500"> 
+    <p class="text-xs font-bold tracking-wider text-blue-600">Cumplimiento</p> 
+    <h4 class="text-2xl font-black text-blue-700 mt-1" id="txt-caja-cumplimiento">0%</h4> 
+    <p class="text-xs text-gray-400 mt-1">Porcentaje efectivamente cobrado.</p> 
+  </div> 
 </div>
-        </div>
 
-        <!-- TU BOX DE EXPORTAR REPORTES (Sigue intacto abajo) -->
+<div class="bg-white rounded-xl shadow border border-gray-200 overflow-hidden">
+
+  <div class="p-5 border-b border-gray-100">
+    <h4 class="font-bold text-gray-900">
+      Movimientos del Período
+    </h4>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="p-4 text-left">Fecha</th>
+          <th class="p-4 text-left">Recibo</th>
+          <th class="p-4 text-left">Socio</th>
+          <th class="p-4 text-left">Período</th>
+          <th class="p-4 text-left">Medio</th>
+          <th class="p-4 text-right">Monto</th>
+        </tr>
+      </thead>
+
+      <tbody id="tabla-auditoria-cuotas-body">
+        <tr>
+          <td colspan="6" class="p-8 text-center text-gray-400">
+            Sin movimientos registrados
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+        <!-- EXPORTAR REPORTES -->
         <div class="bg-white rounded-xl shadow border border-gray-200 p-6">
             <h4 class="text-lg font-bold text-gray-900 mb-2">Exportar Reportes Oficiales</h4>
             <p class="text-sm text-gray-500 mb-6">Descarga el listado consolidado de socios con sus estados de cuenta para auditorías o balances.</p>
@@ -339,7 +369,7 @@
    </section>
 
 
-        <!-- PANTALLA 4: CAJA Y CONTABILIDAD (MÓDULO EXTENDIDO - REPARADO AL 100%) -->
+        <!-- PANTALLA 4: CAJA Y CONTABILIDAD  -->
 <section id="seccion-caja" class="hidden space-y-6">
     <!-- Encabezado Real con tus botones de registro -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -571,6 +601,20 @@
                 <div class="flex justify-between"><span>Monto total:</span><span id="pago-monto-txt" class="font-bold text-gray-900 text-base">$-</span></div>
                 <div class="flex justify-between"><span>Vencía:</span><span id="pago-vencimiento-txt" class="font-medium text-gray-900">-</span></div>
             </div>
+            <div id="contenedor-recargo-mora" class="hidden bg-rose-50 border border-rose-200 rounded-xl p-3 text-sm">
+                  <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="check-recargo-mora" >
+                            <span class="font-semibold text-rose-700">
+                                      Aplicar recargo por mora
+                            </span>
+                    </label>
+                            <div class="mt-2 text-xs text-rose-600">Recargo:
+                                <span id="lbl-recargo-monto">$0</span>
+                            </div>
+                            <div class="font-bold text-rose-700">Total final:
+                                <span id="lbl-recargo-total">$0</span>
+                            </div>
+            </div>
             <div class="text-left">
                 <label class="block text-xs font-bold uppercase text-gray-400 mb-2 tracking-wide">Tipo de pago</label>
                 <div class="grid grid-cols-2 gap-3">
@@ -675,6 +719,7 @@
                                 <th class="p-3 text-center">Período</th>
                                 <th class="p-3 text-center">Medio</th>
                                 <th class="p-3 text-right pr-4">Monto</th>
+                                <th class="p-3 text-center">Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="ficha-tabla-pagos-body" class="divide-y divide-gray-50 text-gray-700 font-sans">
@@ -976,6 +1021,7 @@
 
     <!-- ORQUESTACIÓN MODULAR CENTRAL -->
     <script src="config.js"></script>
+    <script src="src/modals/menu-barra-lateral.js"></script>
     <script type="module" src="app.js"></script>
 </body>
 </html>

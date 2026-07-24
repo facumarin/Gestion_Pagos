@@ -104,7 +104,7 @@ export function inicializarAuditoriaCuotas(obtenerSocios) {
     document.getElementById('txt-caja-mora').innerText =
       `$${moraMonto.toLocaleString('es-AR')},00`;
 
-    window.renderizarTablaAuditoriaCuotas();
+    //window.renderizarTablaAuditoriaCuotas();
 
   };
 
