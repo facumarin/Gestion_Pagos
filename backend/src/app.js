@@ -9,6 +9,7 @@ import { RegistrarPagoCuota } from './use-cases/RegistrarPagoCuota.js';
 import { RegistrarSocioCompleto } from './use-cases/RegistrarSocioCompleto.js';
 import { ObtenerHistorialSocio } from './use-cases/ObtenerHistorialSocio.js';
 import { ObtenerBalanceCuotas } from './use-cases/ObtenerBalanceCuotas.js';
+import { AnularPago } from './use-cases/AnularPago.js';
 
 const app = express();
 app.use(cors());
@@ -43,6 +44,11 @@ const obtenerBalanceCuotasUC =
     supabase,
     socioRepository
   );
+  const anularPagoUC =
+  new AnularPago(
+    supabase
+  );
+
 // 📡 A. Traer los datos del Dashboard y métricas del semáforo
 app.get('/dashboard', async (req, res) => {
   try {
@@ -132,6 +138,28 @@ app.get('/socios/:id/pagos', async (req, res) => {
       error: error.message
     });
   }
+});
+
+// 🚫 ANULAR COMPROBANTE
+app.post('/pagos/:id/anular', async (req, res) => {
+
+  try {
+
+    const resultado =
+      await anularPagoUC.ejecutar(
+        req.params.id
+      );
+
+    res.json(resultado);
+
+  } catch (error) {
+
+    res.status(400).json({
+      error: error.message
+    });
+
+  }
+
 });
 
 app.get('/cuotas/balance', async (req, res) => {

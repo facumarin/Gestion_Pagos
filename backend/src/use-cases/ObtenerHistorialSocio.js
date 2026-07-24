@@ -34,7 +34,8 @@ export class ObtenerHistorialSocio {
           forma_pago,
           periodo_mes,
           periodo_anio,
-          numero_recibo
+          numero_recibo,
+          anulado
         `)
         .in('id_cuota', listaIdsCuotas)
         .order('fecha_pago', {

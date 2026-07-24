@@ -11,7 +11,7 @@ export class RegistrarSocioCompleto {
   }
 
   async ejecutar(datosSocio) {
-
+let datosComprobante = null;
     const {
       registraPagoInicial,
       montoCuota,
@@ -19,7 +19,7 @@ export class RegistrarSocioCompleto {
       altaMedioPago,
       condicionIngreso
     } = datosSocio;
-
+const montoFinal = Number(montoCuota);
     const socioCreado =
       await this.registrarSocioUC.ejecutar(datosSocio);
 if (
@@ -37,10 +37,10 @@ if (
     mes: altaMesContable || (new Date().getMonth() + 1),
     anio: anioAct,
     monto_total:
-      parseFloat(montoCuota || 5000),
+      montoFinal,
     pagada: false,
     saldo_pendiente:
-      parseFloat(montoCuota || 5000)
+      montoFinal
   }]);
 
 }
@@ -87,7 +87,7 @@ if (
               mes: altaMesContable,
               anio: anioAct,
               monto_total:
-                parseFloat(montoCuota || 5000),
+                montoFinal,
               pagada: true,
               saldo_pendiente: 0.00
             }])
@@ -104,33 +104,51 @@ if (
 
 const nombreMedioTexto =  infoMedio? infoMedio.nombre: 'Efectivo';
 
-          await this.supabase
-            .from('pagos')
-            .insert([{
-              id_cuota: cuota.id,
-              monto_abonado:
-                parseFloat(montoCuota || 5000),
-              forma_pago:  nombreMedioTexto,
-              periodo_mes: altaMesContable,
-              periodo_anio: anioAct,
-              cobrado_por: 'Administrativo'
-            }]);
+const { data: pago } =
+  await this.supabase
+    .from('pagos')
+    .insert([{
+      id_cuota: cuota.id,
+      monto_abonado:
+        montoFinal,
+      forma_pago: nombreMedioTexto,
+      periodo_mes: altaMesContable,
+      periodo_anio: anioAct,
+      cobrado_por: 'Administrativo'
+    }])
+    .select()
+    .single();
 
-        await this.supabase
+  await this.supabase
   .from('caja_movimientos')
   .insert([{
     id_categoria: cat.id,
     id_socio: socioCreado.id,
     concepto:
       `Pago Inicial Alta - Período: ${mesesTxt[altaMesContable - 1]} ${anioAct}`,
-    monto:
-      parseFloat(montoCuota || 5000),
-    tipo_pago:
-      nombreMedioTexto
+    monto: montoFinal,
+    tipo_pago: nombreMedioTexto
   }]);
+
+datosComprobante = {
+  pagoInicial: true,
+  numeroRecibo:
+    pago?.numero_recibo || null,
+  mesLiquidado:
+    altaMesContable,
+  anioLiquidado:
+    anioAct,
+  montoAbonado:
+   montoFinal,
+  formaPago:
+    nombreMedioTexto
+};
         }
       }
     }
-    return socioCreado;
+return {
+  ...socioCreado,
+  ...(datosComprobante || {})
+};
   }
 }

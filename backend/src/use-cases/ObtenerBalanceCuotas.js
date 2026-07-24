@@ -57,7 +57,7 @@ let queryPagos =
       periodo_mes,
       periodo_anio,
       numero_recibo
-    `);
+    `).eq('anulado', false);
 
 if (
   mesDesde !== null &&
