@@ -6,7 +6,7 @@
 const CONFIG_INSTITUCION = {
   nombre: "Villa Ansaldi",
   subtitulo: "Club Atlético",
-  escudoUrl: "ClubVA.png", 
+  escudoUrl: "ClubV_A.jpeg", // escudoUrl: "ClubVA.png",
   emojiDefecto: "⚽",
   version: "v1.0.0 - SaaS Online", // <- Agregamos la versión aquí
 
