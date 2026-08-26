@@ -7,9 +7,9 @@ import {
 } from '../infrastructure/calendario/RepositoriosSupabase.js';
 
 import { CrearEvento } from '../use-cases/calendario/CrearEvento.js';
+import { ListarEventosPorRango} from '../use-cases/calendario/CancelarYListar.js';
 
 const router = express.Router();
-
 const recursoRepo = new RecursoRepositorySupabase();
 const actividadRepo = new ActividadRepositorySupabase();
 const eventoRepo = new EventoRepositorySupabase();
@@ -40,6 +40,35 @@ router.get('/actividades', async (req, res) => {
       });
 
     res.json(actividades);
+
+  } catch (error) {
+
+    res.status(500).json({
+      error: error.message
+    });
+  }
+});
+
+router.get('/eventos', async (req, res) => {
+
+  try {
+
+    const listarEventos =
+      new ListarEventosPorRango(
+        eventoRepo
+      );
+
+    const resultado =
+      await listarEventos.ejecutar({
+        desde: new Date(req.query.desde),
+        hasta: new Date(req.query.hasta),
+        recursoId:
+          req.query.recursoId || null,
+        actividadId:
+          req.query.actividadId || null
+      });
+
+    res.json(resultado);
 
   } catch (error) {
 
