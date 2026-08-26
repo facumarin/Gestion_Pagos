@@ -13,6 +13,7 @@ import { AnularPago } from './use-cases/AnularPago.js';
 import { RegistrarMovimientoCaja } from './use-cases/RegistrarMovimientoCaja.js';
 import { ObtenerMovimientosCaja } from './use-cases/ObtenerMovimientosCaja.js';
 import multer from 'multer';
+import calendarioRoutes from './routes/rutasCalendario.js';
 
 const upload = multer({
   storage: multer.memoryStorage()
@@ -22,6 +23,7 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use('/calendario', calendarioRoutes);
 
 const socioRepository = new PostgresSocioRepository();
 
