@@ -10,8 +10,16 @@ import { RegistrarSocioCompleto } from './use-cases/RegistrarSocioCompleto.js';
 import { ObtenerHistorialSocio } from './use-cases/ObtenerHistorialSocio.js';
 import { ObtenerBalanceCuotas } from './use-cases/ObtenerBalanceCuotas.js';
 import { AnularPago } from './use-cases/AnularPago.js';
+import { RegistrarMovimientoCaja } from './use-cases/RegistrarMovimientoCaja.js';
+import { ObtenerMovimientosCaja } from './use-cases/ObtenerMovimientosCaja.js';
+import multer from 'multer';
+
+const upload = multer({
+  storage: multer.memoryStorage()
+});
 
 const app = express();
+
 app.use(cors());
 app.use(express.json());
 
@@ -49,6 +57,15 @@ const obtenerBalanceCuotasUC =
     supabase
   );
 
+  const registrarMovimientoCajaUC =
+  new RegistrarMovimientoCaja(
+    supabase
+  );
+
+  const obtenerMovimientosCajaUC =
+  new ObtenerMovimientosCaja(
+    supabase
+  );
 // 📡 A. Traer los datos del Dashboard y métricas del semáforo
 app.get('/dashboard', async (req, res) => {
   try {
@@ -162,6 +179,48 @@ app.post('/pagos/:id/anular', async (req, res) => {
 
 });
 
+// 💰 REGISTRAR MOVIMIENTO DE CAJA
+app.post('/caja/movimientos', async (req, res) => {
+
+  try {
+
+    const movimiento =
+      await registrarMovimientoCajaUC.ejecutar(
+        req.body
+      );
+
+    res.status(201).json(movimiento);
+
+  } catch (error) {
+
+    res.status(400).json({
+      error: error.message
+    });
+
+  }
+
+});
+
+// 📋 OBTENER MOVIMIENTOS DE CAJA
+app.get('/caja/movimientos', async (req, res) => {
+
+  try {
+
+    const movimientos =
+      await obtenerMovimientosCajaUC.ejecutar();
+
+    res.json(movimientos);
+
+  } catch (error) {
+
+    res.status(500).json({
+      error: error.message
+    });
+
+  }
+
+});
+
 app.get('/cuotas/balance', async (req, res) => {
   try {
 
@@ -227,6 +286,103 @@ app.post('/auth/login', async (req, res) => {
   }
 });
 
+// 📂 CATEGORÍAS DE CAJA
+app.get('/categorias-caja', async (req, res) => {
+
+  try {
+
+    const { data, error } =
+      await supabase
+        .from('categorias_caja')
+        .select('*')
+        .order('nombre');
+
+    if (error) throw error;
+
+    res.json(data);
+
+  } catch (error) {
+
+    res.status(500).json({
+      error: error.message
+    });
+
+  }
+
+});
+
+app.post(
+  '/caja/upload-comprobante',
+  upload.single('archivo'),
+  async (req, res) => {
+
+    try {
+
+      if (!req.file) {
+
+        return res
+          .status(400)
+          .json({
+            error: 'No se recibió archivo.'
+          });
+
+      }
+
+      const tipo =
+        req.body.tipo || 'ingreso';
+
+      const carpeta =
+        tipo.toLowerCase();
+
+      const nombreArchivo =
+        `${Date.now()}_${req.file.originalname}`;
+
+      const rutaCompleta =
+        `${carpeta}/${nombreArchivo}`;
+
+      const { error } =
+        await supabase.storage
+          .from(
+            'comprobantes-contables'
+          )
+          .upload(
+            rutaCompleta,
+            req.file.buffer,
+            {
+              contentType:
+                req.file.mimetype,
+              upsert: false
+            }
+          );
+
+      if (error) throw error;
+
+      const {
+        data: urlData
+      } =
+        supabase.storage
+          .from(
+            'comprobantes-contables'
+          )
+          .getPublicUrl(
+            rutaCompleta
+          );
+
+      res.json({
+        url: urlData.publicUrl,
+        nombreArchivo
+      });
+
+    } catch (error) {
+
+      res.status(500).json({
+        error: error.message
+      });
+
+    }
+
+  }
+);
 
 const PUERTO = process.env.PORT || 3000;
 

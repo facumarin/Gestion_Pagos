@@ -1,12 +1,119 @@
 import { obtenerMesActual } from './fechas.js';
+import { obtenerBalanceCuotas } from './api-cuotas.js';
 
-let auditoriaColorActivoGlobal = 'Todos';
+async function cargarBalanceCuotas(
+  mesDesde = obtenerMesActual(),
+  mesHasta = obtenerMesActual(),
+  anio = new Date().getFullYear()
+) {
+  try {
 
-let obtenerSociosGlobal = () => [];
+    const balance =
+      await obtenerBalanceCuotas(
+        mesDesde,
+        mesHasta,
+        anio
+      );
 
-export function inicializarAuditoriaCuotas(obtenerSocios) {
+    document.getElementById(
+      'txt-caja-estimada'
+    ).innerText =
+      `$${balance.proyectado.toLocaleString('es-AR')}`;
 
-  obtenerSociosGlobal = obtenerSocios;
+    document.getElementById(
+      'txt-caja-real'
+    ).innerText =
+      `$${balance.cobrado.toLocaleString('es-AR')}`;
+
+    document.getElementById(
+      'txt-caja-mora'
+    ).innerText =
+      `$${balance.pendiente.toLocaleString('es-AR')}`;
+
+    document.getElementById(
+      'txt-caja-cumplimiento'
+    ).innerText =
+      `${balance.cumplimiento}%`;
+
+    renderizarPagosCuotas(
+      balance.pagos || []
+    );
+
+  } catch (error) {
+
+    console.error(
+      'Error al cargar balance:',
+      error
+    );
+
+  }
+}
+
+function renderizarPagosCuotas(
+  pagos = []
+) {
+
+  const tbody =
+    document.getElementById(
+      'tabla-auditoria-cuotas-body'
+    );
+
+  if (!tbody) return;
+
+  if (!pagos.length) {
+
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6"
+            class="p-8 text-center text-gray-400">
+          Sin movimientos registrados.
+        </td>
+      </tr>
+    `;
+
+    return;
+  }
+
+  tbody.innerHTML =
+    pagos.map(p => `
+      <tr class="border-b border-gray-100">
+
+        <td class="p-4">
+          ${new Date(
+            p.fecha_pago
+          ).toLocaleDateString('es-AR')}
+        </td>
+
+        <td class="p-4 font-mono">
+          #${p.numero_recibo || '-'}
+        </td>
+
+        <td class="p-4">
+          ${p.nombreSocio || ''}
+          ${p.apellidoSocio || ''}
+        </td>
+
+        <td class="p-4">
+          ${p.periodo_mes || '-'}
+          /
+          ${p.periodo_anio || '-'}
+        </td>
+
+        <td class="p-4">
+          ${p.forma_pago || '-'}
+        </td>
+
+        <td class="p-4 text-right font-bold">
+          $${Number(
+            p.monto_abonado || 0
+          ).toLocaleString('es-AR')}
+        </td>
+
+      </tr>
+    `).join('');
+}
+
+export function inicializarAuditoriaCuotas() {
 
   window.evaluarEstructuraFiltroRango = function() {
     const checkActivo = document.getElementById('check-habilitar-rango').checked;
@@ -24,237 +131,66 @@ export function inicializarAuditoriaCuotas(obtenerSocios) {
     window.recalcularMetricasCuotasPorMes();
   };
 
-  window.recalcularMetricasCuotasPorMes = function() {
-
-    const checkActivo =
-      document.getElementById('check-habilitar-rango')?.checked || false;
-
-    const mesDesde =
-      parseInt(
-        document.getElementById('select-cuotas-mes-desde')?.value || obtenerMesActual(),
-        10
-      );
-
-    const mesHasta =
-      checkActivo
-        ? parseInt(
-            document.getElementById('select-cuotas-mes-hasta')?.value || obtenerMesActual(),
-            10
-          )
-        : mesDesde;
-
-    const montoBaseDefault =
-      window.AppConfig?.montoBaseDefault || 0;
-
-    const sociosActivos =
-      obtenerSociosGlobal().filter(
-        s => s.estado !== 'Inactivo'
-      );
-
-    let estimadosMonto = 0;
-    let cobradosMonto = 0;
-    let moraMonto = 0;
-
-    sociosActivos.forEach(socio => {
-
-      const cuotaMonto =
-        parseFloat(
-          socio.montoCuota ||
-          socio.monto_cuota ||
-          montoBaseDefault
-        );
-
-      estimadosMonto += cuotaMonto;
-
-      const fVenc =
-        socio.fechaVencimiento ||
-        socio.fecha_vencimiento;
-
-      if (fVenc) {
-
-        const mesVencimientoSocio =
-          new Date(fVenc).getUTCMonth() + 1;
-
-        if (mesVencimientoSocio > mesHasta) {
-          cobradosMonto += cuotaMonto;
-        }
-        else if (
-          mesVencimientoSocio >= mesDesde &&
-          mesVencimientoSocio <= mesHasta
-        ) {
-          moraMonto += cuotaMonto;
-        }
-        else {
-          estimadosMonto -= cuotaMonto;
-        }
-
-      } else {
-
-        moraMonto += cuotaMonto;
-
-      }
-    });
-
-    document.getElementById('txt-caja-estimada').innerText =
-      `$${estimadosMonto.toLocaleString('es-AR')},00`;
-
-    document.getElementById('txt-caja-real').innerText =
-      `$${cobradosMonto.toLocaleString('es-AR')},00`;
-
-    document.getElementById('txt-caja-mora').innerText =
-      `$${moraMonto.toLocaleString('es-AR')},00`;
-
-    //window.renderizarTablaAuditoriaCuotas();
-
-  };
-
-  window.filtrarAuditoriaCuotas = function(color) {
-
-    auditoriaColorActivoGlobal = color;
-
-    const titulos = {
-      'Todos': 'Listado General del Período',
-      'Verde': 'Comprobantes Saldados (Al Día)',
-      'Rojo': 'Padrón de Miembros en Mora'
-    };
-
-    const lblTitulo =
-      document.getElementById('lbl-auditoria-titulo-filtro');
-
-    if (lblTitulo) {
-      lblTitulo.innerText =
-        titulos[color] || 'Listado General';
-    }
-
-    window.renderizarTablaAuditoriaCuotas();
-
-  };
-
-  window.renderizarTablaAuditoriaCuotas = function() {
-
-    const tbody =
-      document.getElementById(
-        'tabla-auditoria-cuotas-body'
-      );
-
-    const buscadorTxt =
-      document.getElementById(
-        'input-buscador-auditoria-cuotas'
-      )?.value.toLowerCase().trim() || '';
-
-    if (!tbody) return;
+window.recalcularMetricasCuotasPorMes =
+  async function() {
 
     const checkActivo =
       document.getElementById(
         'check-habilitar-rango'
       )?.checked || false;
 
-    const mesDesde =
-  parseInt(
-    document.getElementById(
-      'select-cuotas-mes-desde'
-    )?.value || obtenerMesActual(),
-    10
-  );
+    const selectDesde =
+      document.getElementById(
+        'select-cuotas-mes-desde'
+      );
 
-   const mesHasta =
-  checkActivo
-    ? parseInt(
-        document.getElementById(
-          'select-cuotas-mes-hasta'
-        )?.value || obtenerMesActual(),
+    const selectHasta =
+      document.getElementById(
+        'select-cuotas-mes-hasta'
+      );
+
+    let mesDesde =
+      parseInt(
+        selectDesde?.value ||
+        obtenerMesActual(),
         10
-      )
-    : mesDesde;
-
-    let filtrados =
-      obtenerSociosGlobal().filter(
-        s => s.estado !== 'Inactivo'
       );
 
-    filtrados = filtrados.filter(s => {
+    let mesHasta =
+      checkActivo
+        ? parseInt(
+            selectHasta?.value ||
+            obtenerMesActual(),
+            10
+          )
+        : mesDesde;
 
-      const fVenc =
-        s.fechaVencimiento ||
-        s.fecha_vencimiento;
+    if (
+      checkActivo &&
+      mesHasta < mesDesde
+    ) {
 
-      if (!fVenc) return true;
+      selectHasta.value =
+        String(mesDesde);
 
-      const mesV =
-        new Date(fVenc).getUTCMonth() + 1;
-
-      return mesV >= mesDesde;
-    });
-
-    if (auditoriaColorActivoGlobal !== 'Todos') {
-
-      filtrados = filtrados.filter(s => {
-
-        const fVenc =
-          s.fechaVencimiento ||
-          s.fecha_vencimiento;
-
-        const mesV =
-          fVenc
-            ? new Date(fVenc).getUTCMonth() + 1
-            : 1;
-
-        return auditoriaColorActivoGlobal === 'Verde'
-          ? mesV > mesHasta
-          : mesV <= mesHasta;
-      });
-
+      mesHasta = mesDesde;
     }
 
-    if (buscadorTxt) {
-
-      filtrados = filtrados.filter(
-        s =>
-          s.nombre.toLowerCase().includes(buscadorTxt) ||
-          s.dni.toString().includes(buscadorTxt)
+    const anioSeleccionado =
+      parseInt(
+        document.getElementById(
+          'select-cuotas-anio'
+        )?.value,
+        10
       );
 
-    }
+    await cargarBalanceCuotas(
+      mesDesde,
+      mesHasta,
+      anioSeleccionado
+    );
 
-    if (filtrados.length === 0) {
+};
 
-      tbody.innerHTML =
-        `<tr><td colspan="6" class="p-8 text-center text-gray-400 text-sm font-medium">Sin registros para el filtro seleccionado.</td></tr>`;
-
-      return;
-
-    }
-
-    tbody.innerHTML = filtrados.map(s => {
-
-      const fVenc =
-        s.fechaVencimiento ||
-        s.fecha_vencimiento;
-
-      const esPagado =
-        fVenc
-          ? (new Date(fVenc).getUTCMonth() + 1) > mesHasta
-          : false;
-
-      const waUrl =
-        `https://wa.me/${s.telefono}?text=${encodeURIComponent(`Hola ${s.nombre}, te contactamos desde la administración para recordar regularizar tu arancel.`)}`;
-
-      return `
-      <tr class="border-b border-gray-100 hover:bg-gray-50/50 transition text-sm">
-        <td class="p-4 pl-6 font-bold text-gray-900">${s.nombre} ${s.apellido || ''}</td>
-        <td class="p-4 font-mono text-gray-600">${s.dni}</td>
-        <td class="p-4 text-gray-500">${s.tipo || 'Arancel Social'}</td>
-        <td class="p-4 text-center font-medium">${esPagado ? '✅ Percibido' : '❌ Pendiente'}</td>
-        <td class="p-4 text-right font-mono font-black ${esPagado ? 'text-emerald-600' : 'text-rose-600'}">$${parseFloat(s.montoCuota || 0).toLocaleString('es-AR')},00</td>
-        <td class="p-4 text-right pr-6">
-          ${esPagado
-            ? `<span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded border border-emerald-100">Emitido</span>`
-            : `<a href="${waUrl}" target="_blank" class="text-xs bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold py-1.5 px-3 rounded border border-rose-200 transition cursor-pointer active:scale-[0.97]">📲 Reclamar</a>`
-          }
-        </td>
-      </tr>`;
-    }).join('');
-
-  };
-
+cargarBalanceCuotas();
 }

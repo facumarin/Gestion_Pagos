@@ -4,7 +4,14 @@ export class AnularPago {
     this.supabase = supabase;
   }
 
-  async ejecutar(idPago, motivo = 'Anulado por administración') {
+  async ejecutar(
+    idPago,
+    motivo = 'Anulado por administración'
+  ) {
+
+    // ======================================
+    // OBTENER PAGO
+    // ======================================
 
     const {
       data: pago,
@@ -31,6 +38,10 @@ export class AnularPago {
       );
     }
 
+    // ======================================
+    // OBTENER CUOTA
+    // ======================================
+
     const {
       data: cuota,
       error: errorCuota
@@ -51,9 +62,7 @@ export class AnularPago {
     }
 
     // ======================================
-    // VALIDACIÓN:
-    // sólo permitir anular el último pago
-    // activo de la cuota
+    // VALIDAR ÚLTIMO COMPROBANTE
     // ======================================
 
     const {
@@ -86,7 +95,9 @@ export class AnularPago {
     // ANULAR PAGO
     // ======================================
 
-    await this.supabase
+    const {
+      error: errPago
+    } = await this.supabase
       .from('pagos')
       .update({
         anulado: true,
@@ -96,6 +107,10 @@ export class AnularPago {
       })
       .eq('id', idPago);
 
+    if (errPago) {
+      throw errPago;
+    }
+
     // ======================================
     // RESTAURAR CUOTA
     // ======================================
@@ -104,7 +119,9 @@ export class AnularPago {
       Number(cuota.saldo_pendiente || 0) +
       Number(pago.monto_abonado || 0);
 
-    await this.supabase
+    const {
+      error: errCuota
+    } = await this.supabase
       .from('cuotas')
       .update({
         pagada: false,
@@ -114,6 +131,36 @@ export class AnularPago {
         'id',
         pago.id_cuota
       );
+
+    if (errCuota) {
+      throw errCuota;
+    }
+
+    // ======================================
+    // RESTAURAR VENCIMIENTO DEL SOCIO
+    // ======================================
+
+    const fechaOriginal =
+      `${cuota.anio}-${String(
+        cuota.mes
+      ).padStart(2, '0')}-10`;
+
+    const {
+      error: errSocio
+    } = await this.supabase
+      .from('socios')
+      .update({
+        fecha_vencimiento:
+          fechaOriginal
+      })
+      .eq(
+        'id',
+        cuota.id_socio
+      );
+
+    if (errSocio) {
+      throw errSocio;
+    }
 
     return {
       success: true
