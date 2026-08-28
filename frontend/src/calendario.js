@@ -1,7 +1,9 @@
 import {
   obtenerEventos
 } from './calendario-api.js';
-
+import {
+  renderizarGrillaMensual
+} from './calendario-grilla.js';
 export async function inicializarCalendario() {
 
   try {
@@ -29,7 +31,7 @@ export async function inicializarCalendario() {
         hasta.toISOString()
       );
 
-    renderizarEventos(eventos);
+    renderizarGrillaMensual(eventos);
 
   } catch (error) {
 
