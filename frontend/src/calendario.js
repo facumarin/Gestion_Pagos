@@ -4,11 +4,22 @@ import {
 import {
   renderizarGrillaMensual
 } from './calendario-grilla.js';
+
+let mesActual;
+let anioActual;
+
 export async function inicializarCalendario() {
 
   try {
 
     const hoy = new Date();
+
+mesActual =
+  hoy.getMonth();
+
+anioActual =
+  hoy.getFullYear();
+
 
     const desde = new Date(
       hoy.getFullYear(),
@@ -31,7 +42,13 @@ export async function inicializarCalendario() {
         hasta.toISOString()
       );
 
-    renderizarGrillaMensual(eventos);
+    renderizarGrillaMensual(
+  eventos,
+  mesActual,
+  anioActual
+);
+
+registrarEventosNavegacion();
 
   } catch (error) {
 
@@ -103,4 +120,38 @@ function renderizarEventos(eventos) {
         </div>
       `;
     }).join('');
+}
+function registrarEventosNavegacion() {
+
+  const btnAnterior =
+    document.getElementById(
+      'btn-mes-anterior'
+    );
+
+  const btnSiguiente =
+    document.getElementById(
+      'btn-mes-siguiente'
+    );
+
+  if (btnAnterior) {
+
+    btnAnterior.onclick =
+      () => {
+
+        console.log(
+          'Mes anterior'
+        );
+      };
+  }
+
+  if (btnSiguiente) {
+
+    btnSiguiente.onclick =
+      () => {
+
+        console.log(
+          'Mes siguiente'
+        );
+      };
+  }
 }

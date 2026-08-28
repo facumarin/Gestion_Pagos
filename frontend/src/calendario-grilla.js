@@ -7,9 +7,24 @@ const DIAS = [
   'Sáb',
   'Dom'
 ];
-
+const MESES = [
+  'Enero',
+  'Febrero',
+  'Marzo',
+  'Abril',
+  'Mayo',
+  'Junio',
+  'Julio',
+  'Agosto',
+  'Septiembre',
+  'Octubre',
+  'Noviembre',
+  'Diciembre'
+];
 export function renderizarGrillaMensual(
-  eventos
+  eventos,
+  mes,
+  anio
 ) {
 
   const contenedor =
@@ -18,14 +33,6 @@ export function renderizarGrillaMensual(
     );
 
   if (!contenedor) return;
-
-  const hoy = new Date();
-
-  const anio =
-    hoy.getFullYear();
-
-  const mes =
-    hoy.getMonth();
 
   const primerDia =
     new Date(anio, mes, 1);
@@ -44,12 +51,39 @@ export function renderizarGrillaMensual(
   const totalDias =
     ultimoDia.getDate();
 
-  let html = `
-    <div class="p-4">
-      <div
-        class="grid grid-cols-7 gap-2 text-center font-bold text-sm text-slate-600 mb-3"
+    let html = `
+  <div class="p-4">
+
+    <div
+      class="flex items-center justify-between mb-4"
+    >
+
+      <button
+        id="btn-mes-anterior"
+        class="px-3 py-1 border rounded"
       >
-  `;
+        ◀
+      </button>
+
+      <h3
+        class="font-bold text-lg"
+      >
+        ${MESES[mes]} ${anio}
+      </h3>
+
+      <button
+        id="btn-mes-siguiente"
+        class="px-3 py-1 border rounded"
+      >
+        ▶
+      </button>
+
+    </div>
+
+    <div
+      class="grid grid-cols-7 gap-2 text-center font-bold text-sm text-slate-600 mb-3"
+    >
+`;
 
   DIAS.forEach(dia => {
 
