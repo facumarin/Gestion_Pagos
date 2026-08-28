@@ -12,9 +12,11 @@ import { abrirFichaHistorica, cerrarFichaHistorica} from './src/ficha-historica.
 import {  inicializarAuditoriaCuotas} from './src/auditoria-cuotas.js';
 import './src/modals/modal-caja.js';
 import './src/caja.js';
+import {  inicializarCalendario} from './src/calendario.js';
 
 let todosLosSocios = [];
 let procesandoCobro = false;
+
 function aplicarConfiguracionVisual() {
   const cfg = window.AppConfig;
   if (!cfg) return;
@@ -765,6 +767,7 @@ poblarSelectorMeses('select-caja-mes-filtro');
 poblarSelectorAnios();
   cargarDashboard();
 inicializarAuditoriaCuotas();
+inicializarCalendario();
 
   document.getElementById('input-buscador')?.addEventListener('input', (e) => {
     const txt = e.target.value.toLowerCase().trim();
