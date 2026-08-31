@@ -123,3 +123,23 @@ export async function subirComprobanteCaja(
   return data;
 
 }
+
+export async function actualizarMovimientoCaja(id, datos) {
+  const res = await fetch(`${API_URL}/caja/movimientos/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(datos)
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(
+      data.error || 'Error al actualizar el movimiento contable.'
+    );
+  }
+
+  return data;
+}

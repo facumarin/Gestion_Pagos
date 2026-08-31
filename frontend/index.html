@@ -441,19 +441,21 @@
         
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="bg-slate-50 text-gray-400 uppercase text-[10px] font-bold tracking-wider border-b border-gray-100">
-                        <th class="p-4">Fecha</th>
-                        <th class="p-4">Categoría / Concepto</th>
-                        <th class="p-4 text-center">Medio de Pago</th>
-                        <th class="p-4 text-center">Tipo</th>
-                        <th class="p-4 text-right">Monto</th>
-                        <th class="p-4 text-right">Doc</th>
-                    </tr>
-                </thead>
-                <tbody id="tabla-caja-body" class="divide-y divide-gray-50">
-                    <tr><td colspan="6" class="p-8 text-center text-gray-400 text-sm">No se registraron movimientos contables en este período.</td></tr>
-                </tbody>
+             <thead> 
+    <tr class="bg-slate-50 text-gray-400 uppercase text-[10px] font-bold tracking-wider border-b border-gray-100"> 
+        <th class="p-4">Fecha</th> 
+        <th class="p-4">Categoría / Concepto</th> 
+        <th class="p-4 text-center">Medio de Pago</th> 
+        <th class="p-4 text-center">Tipo</th> 
+        <th class="p-4 text-right">Monto</th> 
+        <th class="p-4 text-right">Doc</th> 
+        <th class="p-4 text-center">Acciones</th>
+    </tr> 
+</thead> 
+<tbody id="tabla-caja-body" class="divide-y divide-gray-50"> 
+    <!-- ✅ Colspan actualizado a 7 -->
+    <tr><td colspan="7" class="p-8 text-center text-gray-400 text-sm">No se registraron movimientos contables en este período.</td></tr> 
+</tbody>
             </table>
         </div>
     </div>

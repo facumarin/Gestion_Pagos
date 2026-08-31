@@ -137,96 +137,64 @@ if (mesSeleccionado > 0) {
     // ==========================
     // TABLA
     // ==========================
+// Tu archivo de la tabla (Fragmento dentro de window.cargarMovimientosCaja)
 
     if (!movimientos.length) {
-
       tbody.innerHTML = `
         <tr>
-          <td colspan="6"
-              class="p-8 text-center text-gray-400 text-sm">
+          <td colspan="7" class="p-8 text-center text-gray-400 text-sm"> <!-- ✅ Actualizado a 7 -->
             No se encontraron movimientos para el filtro seleccionado.
           </td>
         </tr>
       `;
-
       return;
     }
 
-    tbody.innerHTML =
-      movimientos.map(m => `
+    tbody.innerHTML = movimientos.map(m => {
+      // ✅ Contenedor de datos tipado y seguro para el Modal de UX
+      const movSeguro = {
+        id: m.id,
+        idCategoria: m.id_categoria || m.categoria?.id, 
+        concepto: m.concepto,
+        monto: m.monto,
+        medioPago: m.tipo_pago,
+        notas: m.notas || '',
+        comprobanteUrl: m.comprobante_url || null
+      };
 
-        <tr class="hover:bg-slate-50">
-
+      return `
+        <tr class="hover:bg-slate-50 transition-colors">
           <td class="p-4 text-xs text-gray-600">
-            ${new Date(
-              m.fecha
-            ).toLocaleDateString(
-              'es-AR'
-            )}
+            ${new Date(m.fecha).toLocaleDateString('es-AR')}
           </td>
-
           <td class="p-4">
-
-            <div class="font-semibold text-gray-800">
-              ${m.concepto || '-'}
-            </div>
-
+            <div class="font-semibold text-gray-800">${m.concepto || '-'}</div>
           </td>
-
-          <td class="p-4 text-center text-xs">
-            ${m.tipo_pago || '-'}
-          </td>
-
+          <td class="p-4 text-center text-xs">${m.tipo_pago || '-'}</td>
           <td class="p-4 text-center">
-
-            <span
-              class="px-2 py-1 rounded-full text-xs font-bold
-              ${
-                m.categoria?.tipo === 'Ingreso'
-                  ? 'bg-emerald-100 text-emerald-700'
-                  : 'bg-rose-100 text-rose-700'
-              }"
-            >
-
+            <span class="px-2 py-1 rounded-full text-xs font-bold ${
+              m.categoria?.tipo === 'Ingreso' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
+            }">
               ${m.categoria?.tipo || '-'}
-
             </span>
-
           </td>
-
           <td class="p-4 text-right font-bold">
-
-            $${Number(
-              m.monto || 0
-            ).toLocaleString(
-              'es-AR',
-              {
-                minimumFractionDigits: 2
-              }
-            )}
-
+            $${Number(m.monto || 0).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
           </td>
-
           <td class="p-4 text-right">
-
-       ${
-m.comprobante_url
-? `
-<a
-href="${m.comprobante_url}"
-target="_blank"
-rel="noopener noreferrer"
-class="text-blue-600 hover:text-blue-800"
-title="Ver comprobante">
-📄 </a> `
-: '-'
-}
-
+            ${m.comprobante_url ? `<a href="${m.comprobante_url}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 transition-colors" title="Ver comprobante">📄</a>` : '-'}
           </td>
-
+          <!-- ✅ NUEVA CELDA ACCIONES (UX optimizada: botón sutil pero cliqueable) -->
+          <td class="p-4 text-center">
+            <button onclick='window.abrirModalMovimientoCaja("${m.categoria?.tipo || "Ingreso"}", ${JSON.stringify(movSeguro)})' 
+                    class="px-2.5 py-1.5 text-xs font-bold bg-slate-100 hover:bg-blue-50 hover:text-blue-600 text-gray-600 rounded-xl transition-all cursor-pointer shadow-xs active:scale-95">
+                ✏️ Editar
+            </button>
+          </td>
         </tr>
+      `;
+    }).join('');
 
-      `).join('');
 
   } catch (error) {
 

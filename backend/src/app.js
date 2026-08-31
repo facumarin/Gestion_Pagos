@@ -1,4 +1,4 @@
-// backend/src/app.js (Servidor API Express - Blindado 100%)
+// backend/src/app.js
 import express from 'express';
 import cors from 'cors';
 import { supabase } from './infrastructure/database.js';
@@ -117,7 +117,7 @@ app.put('/socios/:id', async (req, res) => {
   }
 });
 
-// 📡 D. Eliminar físicamente de la nube de Supabase
+// 📡 D. Eliminar físicamente de la nube de la base de datos
 app.delete('/socios/:id', async (req, res) => {
   try {
     const exito = await socioRepository.eliminar(req.params.id);
@@ -202,6 +202,36 @@ app.post('/caja/movimientos', async (req, res) => {
   }
 
 });
+
+// 📝 ENDPOINT CORREGIDO EN APP.JS (Mapeo idéntico a tu base de datos)
+app.put('/caja/movimientos/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { idCategoria, concepto, monto, medioPago, notas, comprobanteUrl, archivoNombre } = req.body;
+
+    const { data, error } = await supabase
+      .from('caja_movimientos')
+      .update({
+        id_categoria: idCategoria,
+        concepto: concepto?.trim(),
+        monto: Number(monto),
+        tipo_pago: medioPago,
+        notas: notas, //  Corregido de 'notes' a 'notas'
+        comprobante_url: comprobanteUrl, // Mantiene o actualiza la URL del storage
+        archivo_nombre: archivoNombre   // Mantiene o actualiza el nombre del archivo
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json(data);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 
 // 📋 OBTENER MOVIMIENTOS DE CAJA
 app.get('/caja/movimientos', async (req, res) => {
