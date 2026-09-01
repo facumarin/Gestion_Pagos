@@ -979,7 +979,7 @@
    <!-- MODAL CAJA --> 
 <div id="modal-caja" class="fixed inset-0 bg-black/40 backdrop-blur-sm hidden z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"> 
     
-    <!-- CONTENEDOR PRINCIPAL INTERNO (Mantiene el control de altura y layout flex) -->
+    <!-- CONTENEDOR PRINCIPAL INTERNO-->
     <div class="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] max-h-[90dvh] flex flex-col overflow-hidden"> 
         
         <!-- CABECERA: Fija arriba -->
@@ -997,6 +997,17 @@
                     <label class="block text-xs font-bold text-gray-500 mb-1"> Categoría </label> 
                     <select id="caja-categoria" class="w-full border border-gray-300 rounded-lg p-2 bg-white"> </select> 
                 </div> 
+                <!-- index.html: Agregar dentro del formulario del modal (form-caja) -->
+<div class="mb-3">
+  <label class="text-xs font-bold text-gray-500 block mb-1">Fecha del Movimiento</label>
+  <input 
+    type="date" 
+    id="caja-fecha" 
+    required 
+    class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 font-sans text-gray-700 font-semibold cursor-pointer shadow-xs"
+  >
+</div>
+
                 <div> 
                     <label class="block text-xs font-bold text-gray-500 mb-1"> Concepto </label> 
                     <input id="caja-concepto" type="text" class="w-full border border-gray-300 rounded-lg p-2" placeholder="Detalle del movimiento"> 

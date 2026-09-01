@@ -153,50 +153,52 @@ if (mesSeleccionado > 0) {
       return;
     }
 
-    tbody.innerHTML = movimientos.map(m => {
-      // ✅ Contenedor de datos tipado y seguro para el Modal de UX
-      const movSeguro = {
-        id: m.id,
-        idCategoria: m.id_categoria || m.categoria?.id, 
-        concepto: m.concepto,
-        monto: m.monto,
-        medioPago: m.tipo_pago,
-        notas: m.notas || '',
-        comprobanteUrl: m.comprobante_url || null
-      };
+// Localiza esta sección dentro del map de movimientos en tu caja.js
+tbody.innerHTML = movimientos.map(m => {
+  // ✅ Agregamos fechaOriginal mapeando directamente el m.fecha que ya viene del GET
+  const movSeguro = {
+    id: m.id,
+    idCategoria: m.id_categoria || (m.categoria ? m.categoria.id : ''), 
+    concepto: m.concepto,
+    monto: m.monto,
+    medioPago: m.tipo_pago,
+    notas: m.notas || '',
+    fechaOriginal: m.fecha, // 📅 ¡LÍNEA CLAVE REQUERIDA!
+    comprobanteUrl: m.comprobante_url || null
+  };
 
-      return `
-        <tr class="hover:bg-slate-50 transition-colors">
-          <td class="p-4 text-xs text-gray-600">
-            ${new Date(m.fecha).toLocaleDateString('es-AR')}
-          </td>
-          <td class="p-4">
-            <div class="font-semibold text-gray-800">${m.concepto || '-'}</div>
-          </td>
-          <td class="p-4 text-center text-xs">${m.tipo_pago || '-'}</td>
-          <td class="p-4 text-center">
-            <span class="px-2 py-1 rounded-full text-xs font-bold ${
-              m.categoria?.tipo === 'Ingreso' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
-            }">
-              ${m.categoria?.tipo || '-'}
-            </span>
-          </td>
-          <td class="p-4 text-right font-bold">
-            $${Number(m.monto || 0).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
-          </td>
-          <td class="p-4 text-right">
-            ${m.comprobante_url ? `<a href="${m.comprobante_url}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 transition-colors" title="Ver comprobante">📄</a>` : '-'}
-          </td>
-          <!-- ✅ NUEVA CELDA ACCIONES (UX optimizada: botón sutil pero cliqueable) -->
-          <td class="p-4 text-center">
-            <button onclick='window.abrirModalMovimientoCaja("${m.categoria?.tipo || "Ingreso"}", ${JSON.stringify(movSeguro)})' 
-                    class="px-2.5 py-1.5 text-xs font-bold bg-slate-100 hover:bg-blue-50 hover:text-blue-600 text-gray-600 rounded-xl transition-all cursor-pointer shadow-xs active:scale-95">
-                ✏️ Editar
-            </button>
-          </td>
-        </tr>
-      `;
-    }).join('');
+  return `
+    <tr class="hover:bg-slate-50 transition-colors">
+      <td class="p-4 text-xs text-gray-600">
+        ${new Date(m.fecha).toLocaleDateString('es-AR')}
+      </td>
+      <td class="p-4">
+        <div class="font-semibold text-gray-800">${m.concepto || '-'}</div>
+      </td>
+      <td class="p-4 text-center text-xs">${m.tipo_pago || '-'}</td>
+      <td class="p-4 text-center">
+        <span class="px-2 py-1 rounded-full text-xs font-bold ${
+          m.categoria?.tipo === 'Ingreso' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
+        }">
+          ${m.categoria?.tipo || '-'}
+        </span>
+      </td>
+      <td class="p-4 text-right font-bold">
+        $${Number(m.monto || 0).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+      </td>
+      <td class="p-4 text-right">
+        ${m.comprobante_url ? `<a href="${m.comprobante_url}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 transition-colors" title="Ver comprobante">📄</a>` : '-'}
+      </td>
+      <td class="p-4 text-center">
+        <!-- El botón ya tiene window.abrirModalMovimientoCaja configurado pasándole el tipo y el movSeguro -->
+        <button onclick='window.abrirModalMovimientoCaja("${m.categoria?.tipo || "Ingreso"}", ${JSON.stringify(movSeguro)})' 
+                class="px-2.5 py-1.5 text-xs font-bold bg-slate-100 hover:bg-blue-50 hover:text-blue-600 text-gray-600 rounded-xl transition-all cursor-pointer shadow-xs active:scale-95">
+            ✏️ Editar
+        </button>
+      </td>
+    </tr>
+  `;
+}).join('');
 
 
   } catch (error) {

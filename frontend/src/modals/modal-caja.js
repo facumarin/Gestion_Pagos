@@ -3,21 +3,28 @@ import {
   obtenerMediosPagoCaja,
   registrarMovimientoCaja,
   subirComprobanteCaja,
-  actualizarMovimientoCaja // ✅ Inyección de la nueva dependencia
+  actualizarMovimientoCaja
 } from '../api-caja.js';
 
 let procesandoMovimientoCaja = false;
 window.tipoMovimientoCaja = null;
-window.idMovimientoEdicion = null;        // Estructura de estado: Almacena el ID activo en edición
-window.comprobanteActualEdicion = null;   // Estructura de estado: Almacena el documento activo en edición
+window.idMovimientoEdicion = null; 
+window.comprobanteActualEdicion = null; 
 
 window.abrirModalMovimientoCaja = async function(tipo, movimientoParaEditar = null) {
   window.tipoMovimientoCaja = tipo;
 
   const titulo = document.getElementById('txt-modal-caja-titulo');
   const btnGuardar = document.getElementById('btn-guardar-movimiento-caja');
+  const inputFecha = document.getElementById('caja-fecha');
 
-  // 1. Gestión del Estado UI/UX según intencionalidad
+  // 1. ASIGNAR FECHA DE HOY POR DEFECTO DEL APARATO (Formato YYYY-MM-DD)
+  if (inputFecha) {
+    const hoy = new Date();
+    const tzOffset = hoy.getTimezoneOffset() * 60000;
+    inputFecha.value = (new Date(hoy - tzOffset)).toISOString().slice(0, 10);
+  }
+
   if (titulo) {
     if (movimientoParaEditar) {
       window.idMovimientoEdicion = movimientoParaEditar.id;
@@ -34,12 +41,8 @@ window.abrirModalMovimientoCaja = async function(tipo, movimientoParaEditar = nu
     btnGuardar.innerText = window.idMovimientoEdicion ? 'Actualizar Movimiento' : 'Guardar Movimiento';
   }
 
-  // 2. Carga asíncrona en paralelo de diccionarios/catálogos para optimizar el rendimiento (UX Speed)
-  const [categorias, medios] = await Promise.all([
-    obtenerCategoriasCaja(),
-    obtenerMediosPagoCaja()
-  ]);
-
+  const categorias = await obtenerCategoriasCaja();
+  const medios = await obtenerMediosPagoCaja();
   const selectCategorias = document.getElementById('caja-categoria');
   const selectMedios = document.getElementById('caja-medio-pago');
 
@@ -56,7 +59,6 @@ window.abrirModalMovimientoCaja = async function(tipo, movimientoParaEditar = nu
       .join('');
   }
 
-  // 3. Hidratación segura del Formulario (Sincronizada post-render de catálogos)
   if (movimientoParaEditar) {
     if (selectCategorias && movimientoParaEditar.idCategoria) selectCategorias.value = movimientoParaEditar.idCategoria;
     if (selectMedios && movimientoParaEditar.medioPago) selectMedios.value = movimientoParaEditar.medioPago;
@@ -64,13 +66,17 @@ window.abrirModalMovimientoCaja = async function(tipo, movimientoParaEditar = nu
     document.getElementById('caja-concepto').value = movimientoParaEditar.concepto || '';
     document.getElementById('caja-monto').value = movimientoParaEditar.monto || '';
     
+    // Inyectar fecha de la BD recortando a formato estándar
+    if (inputFecha && movimientoParaEditar.fechaOriginal) {
+      inputFecha.value = movimientoParaEditar.fechaOriginal.substring(0, 10);
+    }
+
     const notasInput = document.getElementById('caja-notas');
     if (notasInput) notasInput.value = movimientoParaEditar.notas || '';
 
-    // Feedback visual del estado del documento adjunto (UX Claridad)
     const preview = document.getElementById('txt-comprobante-preview');
     if (preview && movimientoParaEditar.comprobanteUrl) {
-      preview.innerHTML = `📂 <span class="font-semibold text-emerald-600">Tiene comprobante adjunto. Haz clic para cambiarlo</span>`;
+      preview.innerHTML = `📂 <span class="font-semibold text-emerald-600">Tiene comprobante adjunto. Click para cambiarlo</span>`;
     }
   }
 
@@ -81,7 +87,6 @@ window.cerrarModalCaja = function() {
   document.getElementById('modal-caja')?.classList.add('hidden');
   document.getElementById('form-caja')?.reset();
   
-  // Limpieza del estado de la memoria volatil
   window.idMovimientoEdicion = null;
   window.comprobanteActualEdicion = null;
 
@@ -93,7 +98,7 @@ window.cerrarModalCaja = function() {
 
 document.getElementById('form-caja')?.addEventListener('submit', async function(e) {
   e.preventDefault();
-  if (procesandoMovimientoCaja) return; // Patrón de salvaguarda: Evita llamadas duplicadas (Debounce)
+  if (procesandoMovimientoCaja) return;
 
   procesandoMovimientoCaja = true;
   const btn = document.getElementById('btn-guardar-movimiento-caja');
@@ -104,18 +109,23 @@ document.getElementById('form-caja')?.addEventListener('submit', async function(
   }
 
   try {
-    // Si estamos editando y no se selecciona un archivo nuevo, preservamos el archivo original
     let comprobanteUrl = window.comprobanteActualEdicion;
     let archivoNombre = null;
 
     const archivo = document.getElementById('caja-comprobante')?.files?.[0];
 
-    // Carga diferida o actualización del archivo binario
     if (archivo) {
       const subida = await subirComprobanteCaja(archivo, window.tipoMovimientoCaja);
       comprobanteUrl = subida.url;
       archivoNombre = subida.nombreArchivo;
     }
+
+    // 2. TOMAR LA HORA DIRECTA DE LA COMPU O CELULAR (Formato local seguro)
+    const fechaCalendario = document.getElementById('caja-fecha').value; // "YYYY-MM-DD"
+    const horaDispositivo = new Date().toLocaleTimeString('es-AR', { hour12: false }); // "HH:MM:SS"
+    
+    // Concatenamos el día del input con el reloj real del aparato en un ISO plano local
+    const fechaFinalISO = `${fechaCalendario}T${horaDispositivo}`;
 
     const datosMovimiento = {
       idCategoria: document.getElementById('caja-categoria').value,
@@ -123,11 +133,11 @@ document.getElementById('form-caja')?.addEventListener('submit', async function(
       monto: parseFloat(document.getElementById('caja-monto').value),
       medioPago: document.getElementById('caja-medio-pago').value,
       notas: document.getElementById('caja-notas').value,
+      fecha: fechaFinalISO, // ✅ Mapeado a la hora del sistema local
       comprobanteUrl,
       archivoNombre
     };
 
-    // Orquestación de la petición según la naturaleza de la acción (Estrategia Polimórfica)
     if (window.idMovimientoEdicion) {
       await actualizarMovimientoCaja(window.idMovimientoEdicion, datosMovimiento);
       alert('✅ Movimiento actualizado con éxito.');
@@ -137,7 +147,7 @@ document.getElementById('form-caja')?.addEventListener('submit', async function(
     }
 
     cerrarModalCaja();
-    await window.cargarMovimientosCaja(); // Actualización reactiva de la grilla principal
+    await window.cargarMovimientosCaja();
 
   } catch (error) {
     alert(error.message);

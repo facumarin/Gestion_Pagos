@@ -203,11 +203,11 @@ app.post('/caja/movimientos', async (req, res) => {
 
 });
 
-// 📝 ENDPOINT CORREGIDO EN APP.JS (Mapeo idéntico a tu base de datos)
+// 📝 ENDPOINT PUT REEMPLAZADO EN APP.JS (Mapeo de fecha directo)
 app.put('/caja/movimientos/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { idCategoria, concepto, monto, medioPago, notas, comprobanteUrl, archivoNombre } = req.body;
+    const { idCategoria, concepto, monto, medioPago, notas, comprobanteUrl, archivoNombre, fecha } = req.body;
 
     const { data, error } = await supabase
       .from('caja_movimientos')
@@ -216,21 +216,22 @@ app.put('/caja/movimientos/:id', async (req, res) => {
         concepto: concepto?.trim(),
         monto: Number(monto),
         tipo_pago: medioPago,
-        notas: notas, //  Corregido de 'notes' a 'notas'
-        comprobante_url: comprobanteUrl, // Mantiene o actualiza la URL del storage
-        archivo_nombre: archivoNombre   // Mantiene o actualiza el nombre del archivo
+        notas: notas,
+        fecha: fecha, // ✅ Agregado para impactar la fecha enviada desde el front
+        comprobante_url: comprobanteUrl,
+        archivo_nombre: archivoNombre
       })
       .eq('id', id)
       .select()
       .single();
 
     if (error) throw error;
-
     res.json(data);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 });
+
 
 
 // 📋 OBTENER MOVIMIENTOS DE CAJA
